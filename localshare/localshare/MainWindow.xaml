@@ -1,0 +1,68 @@
+﻿<Window x:Class="localshare.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:localshare"
+        mc:Ignorable="d"
+        FontSize="14" FontFamily="Roboto"
+        Title="Our WPF demo" Height="500" Width="600" ResizeMode="NoResize" 
+        Background="#EEEEEE"
+        ShowInTaskbar="False"
+        Topmost="True" WindowStartupLocation="CenterScreen">
+
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <!-- people container -->
+            <RowDefinition Height="50"/>
+            <!--button row-->
+        </Grid.RowDefinitions>
+
+        <!-- grid inside first row (people grid) -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!--debug label for file path-->
+            <Label Grid.Row="0" Grid.Column="0" Name="path1"></Label>
+        </Grid>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="100" />
+                <ColumnDefinition Width="100" />
+            </Grid.ColumnDefinitions>
+
+            <!--Cancel-->
+            <Button Grid.Column="2" Margin="5" Background="#FAFAFA" Content="Cancel" BorderThickness="0" FontWeight="Bold">
+                <Button.BitmapEffect>
+                    <DropShadowBitmapEffect Color="Black" Direction="1" ShadowDepth="0" Softness="10" Opacity="0.1"/>
+                </Button.BitmapEffect>
+            </Button>
+
+            <!--Share-->
+            <Button Grid.Column="1" Margin="5" Content="Share" Background="#4DB6AC"  BorderThickness="0" FontWeight="Bold">
+                <Button.BitmapEffect>
+                    <DropShadowBitmapEffect Color="black" Direction="1" ShadowDepth="0" Softness="10" Opacity="0.1"/>
+                </Button.BitmapEffect>
+            </Button>
+        </Grid>
+
+
+
+    </Grid>
+
+</Window>
