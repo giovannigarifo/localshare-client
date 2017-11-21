@@ -40,12 +40,11 @@ namespace localshare
             /*
              * Check received argument from cmd line (file path)
              */
-
             //if no argument is received shutdown the application immediatly
             if (e.Args.Length != 1)
             {
                 MessageBox.Show("wrong argument number");
-                this.Shutdown();
+                Shutdown();
             }
 
             //if the filepath is not a valid system local path, shutdown the application
@@ -57,10 +56,15 @@ namespace localshare
             catch (Exception exc)
             {
                 MessageBox.Show("incorrect file path");
-                this.Shutdown();
+                Shutdown();
             }
 
-            //show the main windows
+            /*
+             * Load all data into the main window
+             */
+
+
+            //show the main window
             appWindow.Show();
         }
 

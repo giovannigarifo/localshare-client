@@ -13,6 +13,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
+using localshare.model;
+
 namespace localshare
 {
     /// <summary>
@@ -24,12 +26,10 @@ namespace localshare
         {
             InitializeComponent();
 
+            DataModel dm = new DataModel();
 
-            DataContext = this;
+            this.DataContext = dm; //defines the binding scope
 
-            string[] args = Environment.GetCommandLineArgs();
-
-            path1.Content = args[1];
         }
     }
 }
