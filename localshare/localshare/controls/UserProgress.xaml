@@ -1,0 +1,83 @@
+﻿<UserControl x:Class="localshare.UserProgress"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:localshare"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="500">
+
+    <!-- ListView of file transfers -->
+    <ScrollViewer HorizontalScrollBarVisibility="hidden" VerticalScrollBarVisibility="Auto" >
+        <ListView Name="UsersListView" ItemsSource="{Binding Path=SelectedUsers}">
+            <!-- defining the template for each item of the list -->
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150" />
+                            <ColumnDefinition Width="350" />
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- User profile picture -->
+                        <Image Grid.Column="0" Source="{Binding PhotoPath}" Width="150" Height="150"/>
+        
+                         <!-- Progress bar and user info-->
+                        <Grid Grid.Column="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="60"/>
+                                <RowDefinition Height="90"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="{Binding UserName}" FontSize="12"/>
+                            <ProgressBar Grid.Row="1" Minimum="0" Maximum="100" />
+                        </Grid>
+
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+            <ListView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="500" />
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </ListView.ItemsPanel>
+            <ListView.ItemContainerStyle>
+                <Style>
+                    <Setter Property="Grid.Row" Value="{Binding RowIndex}" />
+                    <Setter Property="Grid.Column" Value="{Binding ColIndex}" />
+                </Style>
+            </ListView.ItemContainerStyle>
+        </ListView>
+    </ScrollViewer>
+
+
+
+
+
+
+
+
+
+
+
+   
+</UserControl>

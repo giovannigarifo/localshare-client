@@ -7,26 +7,26 @@
         mc:Ignorable="d"
         
         FontSize="14" FontFamily="Roboto"
-        Title="Our WPF demo" Height="500" Width="600" ResizeMode="NoResize" 
+        Title="Our WPF demo" Height="600" Width="500" ResizeMode="NoResize" 
         Background="#EEEEEE"
         ShowInTaskbar="False"
         Topmost="True" WindowStartupLocation="CenterScreen">
+    
+        <!--Resources-->
+        
 
-
-   <Grid>
+    <Grid>
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
             <!-- people container -->
-            <RowDefinition Height="50"/>
+            <RowDefinition Height="*"/>
             <!--button row-->
+            <RowDefinition Height="50"/>
         </Grid.RowDefinitions>
 
-        <!-- grid inside first row (people grid) -->
+        <!-- grid inside first row (people container) -->
         <Grid Grid.Row="0">
-
-            <DataGrid ItemsSource="{Binding Path=AvailableUsers}" />
-
+            <ContentControl x:Name="contentControl" />
         </Grid>
 
         <!-- Grid inside second row -->
@@ -38,14 +38,14 @@
             </Grid.ColumnDefinitions>
 
             <!--Cancel-->
-            <Button Grid.Column="2" Margin="5" Background="#FAFAFA" Content="Cancel" BorderThickness="0" FontWeight="Bold">
+            <Button Name="CancelBtn" Grid.Column="2" Margin="5" Background="#FAFAFA" Content="Cancel" BorderThickness="0" FontWeight="Bold" Click="CancelBtnClicked">
                 <Button.BitmapEffect>
                     <DropShadowBitmapEffect Color="Black" Direction="1" ShadowDepth="0" Softness="10" Opacity="0.1"/>
                 </Button.BitmapEffect>
             </Button>
 
             <!--Share-->
-            <Button Grid.Column="1" Margin="5" Content="Share" Background="#4DB6AC"  BorderThickness="0" FontWeight="Bold">
+            <Button Name="ShareBtn" Grid.Column="1" Margin="5" Content="Share" Background="#4DB6AC"  BorderThickness="0" FontWeight="Bold" Click="ShareBtnClicked">
                 <Button.BitmapEffect>
                     <DropShadowBitmapEffect Color="black" Direction="1" ShadowDepth="0" Softness="10" Opacity="0.1"/>
                 </Button.BitmapEffect>

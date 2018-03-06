@@ -35,7 +35,7 @@ namespace localshare
             MainWindow appWindow = new MainWindow();
 
             //activity to be performed before showing the actual main window
-            appWindow.Title = "This title has been defined via app.xaml.cs";
+            appWindow.Title = "LocalShare via app.xaml.cs";
 
             /*
              * Check received argument from cmd line (file path)
@@ -58,11 +58,7 @@ namespace localshare
                 MessageBox.Show("incorrect file path");
                 Shutdown();
             }
-
-            /*
-             * Load all data into the main window
-             */
-
+            
 
             //show the main window
             appWindow.Show();

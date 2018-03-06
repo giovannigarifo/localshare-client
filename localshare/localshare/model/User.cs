@@ -19,8 +19,8 @@ namespace localshare.model
             set { this.userName = value; }
         }
 
-        private string photoPath;
-        public string PhotoPath
+        private Uri photoPath;
+        public Uri PhotoPath
         {
             get { return this.photoPath; }
             set { this.photoPath = value; }
@@ -33,12 +33,29 @@ namespace localshare.model
             set { this.ipAddress = value; }
         }
 
+        private int rowIndex;
+        public int RowIndex
+        {
+            get { return this.rowIndex; }
+            set { this.rowIndex = value; }
+        }
+
+        private int colIndex;
+        public int ColIndex
+        {
+            get { return this.colIndex; }
+            set { this.colIndex = value; }
+        }
+
+
         /*constructor*/
-        public User( string UserName, string PhotoPath, string IpAddress)
+        public User( string UserName, Uri PhotoPath, string IpAddress, int RowIndex, int ColIndex )
         {
             this.UserName = UserName;
-            this.PhotoPath = PhotoPath;
+            this.PhotoPath = PhotoPath; //todo: CHECK IF VALID PATH
             this.IpAddress = IpAddress;
+            this.RowIndex = RowIndex;
+            this.ColIndex = ColIndex;
         }
 
         /*methods*/
