@@ -1,14 +1,9 @@
-﻿/* Model*/
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
+using System.ComponentModel;
 
 namespace localshare.model
 {
-    class User
+    class User : INotifyPropertyChanged
     {
         /*Properties with get/set-ters */
 
@@ -47,6 +42,16 @@ namespace localshare.model
             set { this.colIndex = value; }
         }
 
+        private int percComplete;
+        public int PercComplete
+        {
+            get { return this.percComplete; }
+            set { this.percComplete = value; }
+        }
+
+        /* event handlers */
+        public event PropertyChangedEventHandler PropertyChanged;
+
 
         /*constructor*/
         public User( string UserName, Uri PhotoPath, string IpAddress, int RowIndex, int ColIndex )
@@ -56,6 +61,7 @@ namespace localshare.model
             this.IpAddress = IpAddress;
             this.RowIndex = RowIndex;
             this.ColIndex = ColIndex;
+            this.PercComplete = 0;
         }
 
         /*methods*/
@@ -64,9 +70,22 @@ namespace localshare.model
             return "UserName: " + UserName + ". PhotoPath: " + PhotoPath + ". IpAddress: " + IpAddress + ".";
         }
 
+        //implementation of the method required by INotifyPropertyChanged interface
+        public void NotifyPropertyChanged(string propName)
+        {
+            if (this.PropertyChanged != null)
+                this.PropertyChanged(this, new PropertyChangedEventArgs(propName));
+        }
 
 
-       
+        //Create a User and add him to the AvailableUsers list
+        public void IncrementPercComplete(int perc)
+        {
+            this.PercComplete = perc;
+
+            this.NotifyPropertyChanged("PercComplete");
+        }
+
     }
 
 

@@ -31,7 +31,7 @@
                             </Grid.RowDefinitions>
 
                             <TextBlock Grid.Row="0" Text="{Binding UserName}" FontSize="12"/>
-                            <ProgressBar Grid.Row="1" Minimum="0" Maximum="100" />
+                            <ProgressBar Grid.Row="1" Minimum="0" Maximum="100" Value="{Binding PercComplete}" />
                         </Grid>
 
                     </Grid>

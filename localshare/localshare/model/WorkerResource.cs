@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace localshare.model
 {
@@ -21,7 +18,10 @@ namespace localshare.model
         private FileInfo resourceInfo;
         public FileInfo ResourceInfo { get; set; }
 
-        public WorkerResource(string finalResourcePath, User recipient)
+        private int workerID; //the position in the Workers array
+        public int WorkerID { get; set; }
+
+        public WorkerResource(string finalResourcePath, User recipient, int workerID)
         {
             FinalResourcePath = finalResourcePath;
             Recipient = recipient;
@@ -31,10 +31,7 @@ namespace localshare.model
             {
                 ResourceInfo = new FileInfo(FinalResourcePath);
             }
-            catch (Exception FileInfoExc)
-            {
-                System.Windows.MessageBox.Show("ERROR: WorkerResource Constructor: unable to retieve FileInfo");
-            }
+            catch{ throw; }
 
         }
     }

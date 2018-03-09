@@ -3,8 +3,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace localshare.model
@@ -66,18 +64,16 @@ namespace localshare.model
             //populating available users collection
             this.AvailableUsers = new ObservableCollection<User>();
 
-            this.AddAvailableUser("user_name_1", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "192.168.0.1");
-            this.AddAvailableUser("User_name_2", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "192.168.0.2");
-            this.AddAvailableUser("User_name_3", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "192.168.0.3");
-            this.AddAvailableUser("User_name_4", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "192.168.0.4");
-            this.AddAvailableUser("User_name_5", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "192.168.0.5");
-            this.AddAvailableUser("User_name_6", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "192.168.0.6");
-            this.AddAvailableUser("User_name_7", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "192.168.0.7");
-            this.AddAvailableUser("User_name_8", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "192.168.0.8");
-            this.AddAvailableUser("User_name_9", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "192.168.0.9");
-            this.AddAvailableUser("User_name_10", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "192.168.0.10");
-
-
+            this.AddAvailableUser("user_name_1", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
+            this.AddAvailableUser("User_name_2", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
+            this.AddAvailableUser("User_name_3", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
+            this.AddAvailableUser("User_name_4", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
+            this.AddAvailableUser("User_name_5", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
+            this.AddAvailableUser("User_name_6", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
+            this.AddAvailableUser("User_name_7", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
+            this.AddAvailableUser("User_name_8", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
+            this.AddAvailableUser("User_name_9", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
+            this.AddAvailableUser("User_name_10", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
 
             //instantiation of the selected users collection
             this.SelectedUsers = new ObservableCollection<User>();
@@ -133,8 +129,10 @@ namespace localshare.model
         public void AddSelectedUser(User u)
         {
             int auLen = this.SelectedUsers.Count();
-
-            this.SelectedUsers.Add(new User(u.UserName, u.PhotoPath, u.IpAddress, auLen, 0));
+            u.RowIndex = auLen;
+            u.ColIndex = 0;
+            
+            this.SelectedUsers.Add(u);
 
             this.NotifyPropertyChanged("SelectedUsers");
         }

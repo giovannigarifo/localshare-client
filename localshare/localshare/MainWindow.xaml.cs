@@ -1,28 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.IO.Compression;
-
-using localshare.model;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.IO;
-using System.Net.NetworkInformation;
-using System.Diagnostics;
+using localshare.model;
+
 
 namespace localshare
 {
@@ -38,15 +23,17 @@ namespace localshare
         UserList uList;
         UserProgress uProgress;
 
+        BackgroundWorker[] Workers; //workers array
+        int numWorkers = 0; //number of workers
+        int numFinishedJobs = 0; //number of finished jobs, e.g. the number of workers that correctly returned
+
         /// <summary>
         /// Constructor for the MainWindow
         /// </summary>
         public MainWindow()
         {
             InitializeComponent();
-
             this.dm = new DataModel();
-
             this.DataContext = dm; //defines the binding scope
 
             /*
@@ -67,19 +54,19 @@ namespace localshare
          */
         private void ShareBtnClicked(object sender, RoutedEventArgs e)
         {
- 
-            // 1) obtain a single archive for the resources to be sent
+            int i = 0;
+            WorkerResource wr = null;
+            string compressedPath;
 
-            if(dm.resourcePath_isDirectory == true)
+            // 1) obtain a single archive for the resources to be sent
+            if (dm.resourcePath_isDirectory == true)
             {
                 //la risorsa da inviare è una directory, necessaria compressione prima di invio
 
                 try
                 {
-                    string compressedPath = System.IO.Path.GetTempPath() + "localshare_tmp_" + Stopwatch.GetTimestamp().ToString() + ".zip";
-
+                    compressedPath = System.IO.Path.GetTempPath() + "localshare_tmp_" + Stopwatch.GetTimestamp().ToString() + ".zip";
                     ZipFile.CreateFromDirectory(dm.resourcePath, compressedPath, CompressionLevel.NoCompression, true);
-
                     dm.resourcePath = compressedPath; //update the path of the resource to be sent with the path of the compressed file
 
                 } catch(Exception exc)
@@ -87,33 +74,52 @@ namespace localshare
                     if(exc is System.Security.SecurityException)
                     {
                         MessageBox.Show("ERROR: unable to retrieve the tmp folder path");
-
-                    } else
-                    {
-                        MessageBox.Show("ERROR: unable to zip the directory");
+                        System.Windows.Application.Current.Shutdown();
                     }
-                    
+                    else if(exc is IOException)
+                    {
+                        //a file in the directory cannot be added to the archive, the archive is left incomplete and invalid.
+                        MessageBox.Show("ERROR: unable to compress the directory");
+
+                        DeleteTempFile(dm.resourcePath);
+                        System.Windows.Application.Current.Shutdown();
+                    }
+                    else
+                    {
+                        MessageBox.Show("ERROR: unable to perform the creation of the compressed version of the file to be sent");
+                        System.Windows.Application.Current.Shutdown();
+                    }
                 }
 
             }
-            
+
             // 2) for each selected user, fire a worker that send the resources to him and add him to the SelectedUsers collection
-            
-            BackgroundWorker[] Workers = new BackgroundWorker[uList.UsersListView.SelectedItems.Count];
-            int i = 0;
+            this.numWorkers = uList.UsersListView.SelectedItems.Count;
+            this.Workers = new BackgroundWorker[numWorkers];
+            i = 0;
 
             foreach (User u in uList.UsersListView.SelectedItems)
             {
-                Workers[i] = new BackgroundWorker();
+                this.Workers[i] = new BackgroundWorker();
 
-                Workers[i].WorkerReportsProgress = true;
-                Workers[i].DoWork += WorkerJob; //registring WorkerJob as the last event handler for the RunWorkerAsync event
-                Workers[i].ProgressChanged += WorkerJobProgressChanged; //event handler for the progresschanged event
+                this.Workers[i].WorkerReportsProgress = true;
+                this.Workers[i].WorkerSupportsCancellation = true;
+                this.Workers[i].DoWork += WorkerJob; //registring WorkerJob as the last event handler for the RunWorkerAsync event
+                this.Workers[i].ProgressChanged += WorkerJobProgressChanged; //event handler for the progresschanged event
 
                 //aggregate all the needed resources for the worker
-                WorkerResource wr = new WorkerResource(dm.resourcePath, u);
+                try
+                {
+                    wr = new WorkerResource(dm.resourcePath, u, i);
+                }
+                catch (Exception FileInfoExc)
+                {
+                    System.Windows.MessageBox.Show("ERROR: unable to retrieve FileInfo, gracefully exiting application.");
+                    DeleteTempFile(dm.resourcePath);
+                    System.Windows.Application.Current.Shutdown();
+                }
 
-                Workers[i].RunWorkerAsync(wr); //fires the event with the WorkerResource as argument
+                this.Workers[i].RunWorkerAsync(wr); //fires the event with the WorkerResource as argument
 
                 //add the user to the SelectedUsers collection
                 this.dm.AddSelectedUser(u);              
@@ -129,11 +135,23 @@ namespace localshare
 
 
         /*
-         * action to take when the "Cancel" button has been clicked (event fired)
+         * action to take when the "Cancel" button has been clicked (event fired): Controlled shutdown of the program
          */
         private void CancelBtnClicked(object sender, RoutedEventArgs e)
         {
+            for(int i = 0; i< this.numWorkers; i++)
+            {
+                this.Workers[i].CancelAsync(); //set the CancellationPending property of each worker to true
+            }
+
+            DeleteTempFile(dm.resourcePath);
             System.Windows.Application.Current.Shutdown();
+        }
+
+        private void DeleteTempFile(string compressedPath)
+        {
+            if (File.Exists(compressedPath))
+                File.Delete(compressedPath);
         }
 
 
@@ -153,23 +171,24 @@ namespace localshare
         /// </summary>
         /// <param name="sender">the object that sent the event</param>
         /// <param name="e">arguments of the event, a user object</param>
-        void WorkerJob(object sender, DoWorkEventArgs e)
+        private void WorkerJob(object sender, DoWorkEventArgs e)
         {
             //retrieving all the needed resources from the arguments
             WorkerResource wr = (WorkerResource)e.Argument;
 
+            int WorkerID = (int)wr.WorkerID;
             User recipient = (User)wr.Recipient;
             string filePath = (string)wr.FinalResourcePath;
             FileInfo fileInfo = (FileInfo)wr.ResourceInfo;
             long fileSize = fileInfo.Length; //actual size of the file to send
 
-            
+            int i = 0; //value used to calculate the actual progress of the file sending
+
             FileStream fs;
             byte[] datachunk; //buffer where to store the read bytes
             int numBytes = 1500; //number of bytes to read from file stream (maximum MTU for ethernet frame)
             int numRead = 0; //actually read bytes from filestream
             long numSend = 0; //number of bytes that have been actually sent
-
 
             //remote connection
             Socket s;
@@ -186,9 +205,10 @@ namespace localshare
             }
             catch (Exception SocketExc)
             {
-                System.Windows.MessageBox.Show("ERROR: unable to connect to the remote endpoint");
+                MessageBox.Show("ERROR: unable to connect to the remote endpoint", "Prompt", MessageBoxButton.OK, MessageBoxImage.Warning, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
 
-                //TODO: notify user and thread destroy
+                e.Cancel = true;
+                return;
             }
 
             /*
@@ -201,7 +221,10 @@ namespace localshare
              * TODO: Invio dell'header del protocollo
              */
 
-            while(numSend != fileSize)
+            /*
+             * Send file by chunk and update progress bar
+             */
+            while (numSend != fileSize && this.Workers[WorkerID].CancellationPending != true)
             {
                 //read a chunk
                 numRead = fs.Read(datachunk, 0, numBytes);
@@ -218,34 +241,70 @@ namespace localshare
                     {
                         s.Send(datachunk, 0, numBytes, SocketFlags.None);
                     }
-
                 }
                 catch (Exception SendExc)
                 {
-                    if(SendExc is ArgumentNullException || SendExc is ArgumentOutOfRangeException)
+                    if (SendExc is ArgumentNullException || SendExc is ArgumentOutOfRangeException)
                     {
                         System.Windows.MessageBox.Show("ERROR: worker error in send due to argument exception.");
-
-                    } else
+                        break;
+                    }
+                    else
                     {
                         System.Windows.MessageBox.Show("ERROR: worker error in send due to socket exception");
+                        break;
                     }
 
                 }
 
                 numSend += numRead;
-                
+
                 /*
                  * Update the progress bar 
                  */
-                //TODO: (sender as BackgroundWorker).ReportProgress(i);
-            }
+                (sender as BackgroundWorker).ReportProgress(i, wr.Recipient);
+                i++;
 
+            }         
 
-            // Release the socket and all the resources.
+            //test for pending shutdown request and Release the socket and all the resources.
+            if (this.Workers[WorkerID].CancellationPending == true)
+                e.Cancel = true;                
+            
             s.Shutdown(SocketShutdown.Both);
             s.Close();
+        }
 
+
+        /// <summary>
+        /// callback for the event raised when the job has been completed, if all job have been completed, inform the user and exit the program gracefully
+        /// </summary>
+        /// <param name="sender">the sender is the related worker</param>
+        /// <param name="e">event data</param>
+        private void WorkerJobCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            this.numFinishedJobs++;
+
+            if (e.Cancelled)
+            {
+                //the worker job has been cancelled for some reason
+                MessageBox.Show("A WorkerJob has been cancelled for some reason", "Prompt", MessageBoxButton.OK, MessageBoxImage.Warning, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
+
+            } else
+            {
+                //the worker correctly finished his job without errors
+                if( this.numFinishedJobs == numWorkers)
+                {
+                    //all jobs completed, exit the program
+                    MessageBox.Show("All the jobs have been completed! shutting down the program gracefully", "Prompt", MessageBoxButton.OK, MessageBoxImage.Warning, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
+                    System.Windows.Application.Current.Shutdown();
+                }
+                else
+                {
+                    MessageBox.Show("A worker correctly finished his job", "Prompt", MessageBoxButton.OK, MessageBoxImage.Warning, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
+                }
+
+            }            
         }
 
 
@@ -254,9 +313,10 @@ namespace localshare
         /// </summary>
         /// <param name="sender">the sender is the related worker</param>
         /// <param name="e">the progress percentage sended by the worker</param>
-        void WorkerJobProgressChanged(object sender, ProgressChangedEventArgs e)
-        {
-            //pbStatus.Value = e.ProgressPercentage;
+        private void WorkerJobProgressChanged(object sender, ProgressChangedEventArgs e)
+        { 
+            User u = (User)e.UserState;
+            u.IncrementPercComplete(e.ProgressPercentage);
         }
 
 
