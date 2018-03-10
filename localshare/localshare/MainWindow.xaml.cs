@@ -38,7 +38,7 @@ namespace localshare
 
             /*
              * Create the UserList custom control and attach it to ContentControl defined in the MainWindow
-             */ 
+             */
             this.uList = new UserList();
             this.contentControl.Content = this.uList;
         }
@@ -56,7 +56,6 @@ namespace localshare
         {
             int i = 0;
             WorkerResource wr = null;
-            string compressedPath;
 
             // 1) obtain a single archive for the resources to be sent
             if (dm.resourcePath_isDirectory == true)
@@ -65,23 +64,23 @@ namespace localshare
 
                 try
                 {
-                    compressedPath = System.IO.Path.GetTempPath() + "localshare_tmp_" + Stopwatch.GetTimestamp().ToString() + ".zip";
-                    ZipFile.CreateFromDirectory(dm.resourcePath, compressedPath, CompressionLevel.NoCompression, true);
-                    dm.resourcePath = compressedPath; //update the path of the resource to be sent with the path of the compressed file
+                    dm.compressedPath = System.IO.Path.GetTempPath() + "localshare_tmp_" + Stopwatch.GetTimestamp().ToString() + ".zip";
+                    ZipFile.CreateFromDirectory(dm.resourcePath, dm.compressedPath, CompressionLevel.NoCompression, true);
 
-                } catch(Exception exc)
+                }
+                catch (Exception exc)
                 {
-                    if(exc is System.Security.SecurityException)
+                    if (exc is System.Security.SecurityException)
                     {
                         MessageBox.Show("ERROR: unable to retrieve the tmp folder path");
                         System.Windows.Application.Current.Shutdown();
                     }
-                    else if(exc is IOException)
+                    else if (exc is IOException)
                     {
                         //a file in the directory cannot be added to the archive, the archive is left incomplete and invalid.
                         MessageBox.Show("ERROR: unable to compress the directory");
 
-                        DeleteTempFile(dm.resourcePath);
+                        DeleteTempFile(dm.compressedPath);
                         System.Windows.Application.Current.Shutdown();
                     }
                     else
@@ -110,19 +109,19 @@ namespace localshare
                 //aggregate all the needed resources for the worker
                 try
                 {
-                    wr = new WorkerResource(dm.resourcePath, u, i);
+                    wr = new WorkerResource(dm.compressedPath, dm.resourceName, u, i);
                 }
                 catch (Exception FileInfoExc)
                 {
                     System.Windows.MessageBox.Show("ERROR: unable to retrieve FileInfo, gracefully exiting application.");
-                    DeleteTempFile(dm.resourcePath);
+                    DeleteTempFile(dm.compressedPath);
                     System.Windows.Application.Current.Shutdown();
                 }
 
                 this.Workers[i].RunWorkerAsync(wr); //fires the event with the WorkerResource as argument
 
                 //add the user to the SelectedUsers collection
-                this.dm.AddSelectedUser(u);              
+                this.dm.AddSelectedUser(u);
 
                 i++;
             }
@@ -139,12 +138,12 @@ namespace localshare
          */
         private void CancelBtnClicked(object sender, RoutedEventArgs e)
         {
-            for(int i = 0; i< this.numWorkers; i++)
+            for (int i = 0; i < this.numWorkers; i++)
             {
                 this.Workers[i].CancelAsync(); //set the CancellationPending property of each worker to true
             }
 
-            DeleteTempFile(dm.resourcePath);
+            DeleteTempFile(dm.compressedPath);
             System.Windows.Application.Current.Shutdown();
         }
 
@@ -165,9 +164,17 @@ namespace localshare
         /*************************************
          *  Event handlers for the Workers
          */
-        
+
         /// <summary>
         /// This event handler performs the task of a single worker: send the resource to the remote user
+        /// 
+        /// Messages are in TLV format: SENDF[T][L][V]
+        /// 
+        /// SENDF = hello of the protocol
+        /// T = 1 byte: 1=filename, 2=filedata
+        /// L = 8 byte: length of V
+        /// V = [L] byte: filename if T=1, filedata if T=2
+        /// 
         /// </summary>
         /// <param name="sender">the object that sent the event</param>
         /// <param name="e">arguments of the event, a user object</param>
@@ -178,17 +185,26 @@ namespace localshare
 
             int WorkerID = (int)wr.WorkerID;
             User recipient = (User)wr.Recipient;
-            string filePath = (string)wr.FinalResourcePath;
-            FileInfo fileInfo = (FileInfo)wr.ResourceInfo;
+            string filePath = (string)wr.CompressedPath;
+            string fileName = (string)wr.ResourceName;
+            FileInfo fileInfo = (FileInfo)wr.CompressedFileInfo;
             long fileSize = fileInfo.Length; //actual size of the file to send
 
-            int i = 0; //value used to calculate the actual progress of the file sending
+            int percComplete = 0; //value used to calculate the actual progress of the file sending
 
             FileStream fs;
-            byte[] datachunk; //buffer where to store the read bytes
-            int numBytes = 1500; //number of bytes to read from file stream (maximum MTU for ethernet frame)
             int numRead = 0; //actually read bytes from filestream
-            long numSend = 0; //number of bytes that have been actually sent
+            long numSent = 0; //number of bytes that have been actually sent
+
+            //buffers
+            int datachunkLen = 1500; //number of bytes to read from file stream (maximum MTU for ethernet frame)
+            int headerLen = 14;
+            byte[] header = new byte[headerLen]; //buffer that contains the header: SENDF[T][L]
+            byte[] datachunk = new byte[datachunkLen]; //buffer that contains each chunk of the value [V]
+
+            byte[] sendf = System.Text.Encoding.ASCII.GetBytes("SENDF"); //5 bytes
+            byte[] type = new byte[1]; //1 byte
+            ulong len;
 
             //remote connection
             Socket s;
@@ -211,66 +227,68 @@ namespace localshare
                 return;
             }
 
-            /*
-             * Send resource to the remote host
-             */
-            fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-            datachunk = new byte[numBytes];
-
-            /*
-             * TODO: Invio dell'header del protocollo
-             */
-
-            /*
-             * Send file by chunk and update progress bar
-             */
-            while (numSend != fileSize && this.Workers[WorkerID].CancellationPending != true)
+            //send file
+            try
             {
-                //read a chunk
-                numRead = fs.Read(datachunk, 0, numBytes);
+                // 1) Sending filename: SENDF1[filename_length][filename]
+                headerLen = 14;
+                type[0] = 1;
+                len = Convert.ToUInt64(fileName.Length);
 
-                try
+                Array.Copy(sendf, 0, header, 0, 5);
+                Array.Copy(type, 0, header, 5, 1);
+                Array.Copy(BitConverter.GetBytes(len), 0, header, 6, 8);
+                s.Send(header, 0, headerLen, SocketFlags.None); // SENDF1[filename_length]
+                s.Send(System.Text.Encoding.ASCII.GetBytes(fileName), 0, fileName.Length, SocketFlags.None); // [filename]
+
+                // 2) Sending file: 2[file_size][file]. The file is actually sended in chunks of 1500B 
+                headerLen = 9;
+                type[0] = 2;
+                len = Convert.ToUInt64(fileSize);
+
+                Array.Copy(type, 0, header, 0, 1);
+                Array.Copy(BitConverter.GetBytes(len), 0, header, 1, 8);
+                s.Send(header, 0, headerLen, SocketFlags.None); // 2[file_size]
+
+                fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+
+                while (numSent != fileSize && this.Workers[WorkerID].CancellationPending != true)
                 {
-                    if (numRead < numBytes)
-                    {
-                        //last chunk, or file smaller than a MTU
-                        s.Send(datachunk, 0, numRead, SocketFlags.None);
+                    numRead = fs.Read(datachunk, 0, datachunkLen); //read a chunk
 
+                    if (numRead < datachunkLen)
+                    {
+                        s.Send(datachunk, 0, numRead, SocketFlags.None); //last chunk, or file smaller than a MTU
                     }
                     else
                     {
-                        s.Send(datachunk, 0, numBytes, SocketFlags.None);
+                        s.Send(datachunk, 0, datachunkLen, SocketFlags.None); //whole chunk
                     }
+
+                    numSent += numRead;
+
+                    // Update the progress bar 
+                    percComplete = (int) (fileSize / numSent) * 100;
+                    (sender as BackgroundWorker).ReportProgress(percComplete, wr.Recipient);
                 }
-                catch (Exception SendExc)
+
+            }
+            catch (Exception SendExc)
+            {
+                if (SendExc is ArgumentNullException || SendExc is ArgumentOutOfRangeException)
                 {
-                    if (SendExc is ArgumentNullException || SendExc is ArgumentOutOfRangeException)
-                    {
-                        System.Windows.MessageBox.Show("ERROR: worker error in send due to argument exception.");
-                        break;
-                    }
-                    else
-                    {
-                        System.Windows.MessageBox.Show("ERROR: worker error in send due to socket exception");
-                        break;
-                    }
-
+                    System.Windows.MessageBox.Show("ERROR: worker error in send due to argument exception.");
                 }
-
-                numSend += numRead;
-
-                /*
-                 * Update the progress bar 
-                 */
-                (sender as BackgroundWorker).ReportProgress(i, wr.Recipient);
-                i++;
-
-            }         
+                else
+                {
+                    System.Windows.MessageBox.Show("ERROR: worker error in send due to socket exception");
+                }
+            }
 
             //test for pending shutdown request and Release the socket and all the resources.
             if (this.Workers[WorkerID].CancellationPending == true)
-                e.Cancel = true;                
-            
+                e.Cancel = true;
+
             s.Shutdown(SocketShutdown.Both);
             s.Close();
         }
@@ -290,10 +308,11 @@ namespace localshare
                 //the worker job has been cancelled for some reason
                 MessageBox.Show("A WorkerJob has been cancelled for some reason", "Prompt", MessageBoxButton.OK, MessageBoxImage.Warning, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
 
-            } else
+            }
+            else
             {
                 //the worker correctly finished his job without errors
-                if( this.numFinishedJobs == numWorkers)
+                if (this.numFinishedJobs == numWorkers)
                 {
                     //all jobs completed, exit the program
                     MessageBox.Show("All the jobs have been completed! shutting down the program gracefully", "Prompt", MessageBoxButton.OK, MessageBoxImage.Warning, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
@@ -304,7 +323,7 @@ namespace localshare
                     MessageBox.Show("A worker correctly finished his job", "Prompt", MessageBoxButton.OK, MessageBoxImage.Warning, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
                 }
 
-            }            
+            }
         }
 
 
@@ -314,7 +333,7 @@ namespace localshare
         /// <param name="sender">the sender is the related worker</param>
         /// <param name="e">the progress percentage sended by the worker</param>
         private void WorkerJobProgressChanged(object sender, ProgressChangedEventArgs e)
-        { 
+        {
             User u = (User)e.UserState;
             u.IncrementPercComplete(e.ProgressPercentage);
         }

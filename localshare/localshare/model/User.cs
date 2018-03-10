@@ -53,7 +53,9 @@ namespace localshare.model
         public event PropertyChangedEventHandler PropertyChanged;
 
 
-        /*constructor*/
+        /*****************
+         *  Constructor 
+         */
         public User( string UserName, Uri PhotoPath, string IpAddress, int RowIndex, int ColIndex )
         {
             this.UserName = UserName;
@@ -64,7 +66,9 @@ namespace localshare.model
             this.PercComplete = 0;
         }
 
-        /*methods*/
+        /*****************
+         *  Methods
+         */
         public override string ToString()
         {
             return "UserName: " + UserName + ". PhotoPath: " + PhotoPath + ". IpAddress: " + IpAddress + ".";

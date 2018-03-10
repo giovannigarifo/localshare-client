@@ -35,7 +35,7 @@ namespace localshare.model
             set { this.availableUsers = value; }
         }
 
-        //collection of the selected users
+        //collection of the selected users (selected by the user)
         private ObservableCollection<User> selectedUsers;
         public ObservableCollection<User> SelectedUsers
         {
@@ -44,17 +44,23 @@ namespace localshare.model
         }
 
         //path of the file or directory to be shared with the selected users
-        public string resourcePath; //path of the resource selected by the user (received as cmd line arg)
+        public string resourcePath;
+        
+        //flag for testing if resource is a directory or not
         public Boolean resourcePath_isDirectory;
+
+        //filename or directory name of the resource to be sent, shrinked from resourcePath
+        public string resourceName;
+
+        //path of the compressed temporary file that is actually sended via the socket
+        public string compressedPath;
 
 
         /****************
          *  Events 
          */
-
         public event PropertyChangedEventHandler PropertyChanged;
-
-
+        
 
         /*****************
          *  Constructor 
@@ -78,24 +84,31 @@ namespace localshare.model
             //instantiation of the selected users collection
             this.SelectedUsers = new ObservableCollection<User>();
 
-            //retrieving path for arguments
+            //retrieving path from arguments
             string[] args = Environment.GetCommandLineArgs();
             this.resourcePath = args[1];
 
-            //check if the resourcePath corresponds to a directory or a file
+            //shrinking filename or directory name from the path
+            this.resourceName = Path.GetFileName(resourcePath);
 
+            //check if the resourcePath corresponds to a directory or a file
             try
             {
                 FileAttributes tpAttributes = File.GetAttributes(this.resourcePath);
 
                 if (tpAttributes.HasFlag(FileAttributes.Directory))
+                {
                     this.resourcePath_isDirectory = true;
+                }
                 else
+                {
                     this.resourcePath_isDirectory = false;
+                }
 
             } catch (Exception exc) {
 
-                MessageBox.Show("ERROR: unable to read resourcePath file attributes");
+                MessageBox.Show("ERROR: unable to read resourcePath file attributes or to shrink resourcePath to filename/dirname");
+                System.Windows.Application.Current.Shutdown();
             }
 
         }
@@ -138,5 +151,4 @@ namespace localshare.model
         }
 
     }
-
 }

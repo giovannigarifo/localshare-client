@@ -9,27 +9,35 @@ namespace localshare.model
     /// </summary>
     class WorkerResource
     {
-        private string finalResourcePath;
-        public string FinalResourcePath { get; set; }
+        private string compressedPath;
+        public string CompressedPath { get; set; }
+
+        private string resourceName; //filename or directory name of the resource that the user want to send (not the compressed tmp file!)
+        public string ResourceName { get; set; }
 
         private User recipient;
         public User Recipient { get; set; }
 
-        private FileInfo resourceInfo;
-        public FileInfo ResourceInfo { get; set; }
+        private FileInfo compressedFileInfo;
+        public FileInfo CompressedFileInfo { get; set; }
 
         private int workerID; //the position in the Workers array
         public int WorkerID { get; set; }
 
-        public WorkerResource(string finalResourcePath, User recipient, int workerID)
+
+        /*****************
+         *  Constructor 
+         */
+        public WorkerResource(string compressedPath, string resourceName, User recipient, int workerID)
         {
-            FinalResourcePath = finalResourcePath;
-            Recipient = recipient;
+            this.CompressedPath = compressedPath;
+            this.Recipient = recipient;
+            this.ResourceName = resourceName;            
 
             //retrieve information about the actual file that must be sent
             try
             {
-                ResourceInfo = new FileInfo(FinalResourcePath);
+                CompressedFileInfo = new FileInfo(CompressedPath);
             }
             catch{ throw; }
 
