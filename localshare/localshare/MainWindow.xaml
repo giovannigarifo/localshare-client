@@ -11,9 +11,8 @@
         Background="#EEEEEE"
         ShowInTaskbar="False"
         Topmost="True" WindowStartupLocation="CenterScreen">
-    
-        <!--Resources-->
-        
+   
+
 
     <Grid>
 
@@ -45,7 +44,7 @@
             </Button>
 
             <!--Share-->
-            <Button Name="ShareBtn" Grid.Column="1" Margin="5" Content="Share" Background="#4DB6AC"  BorderThickness="0" FontWeight="Bold" Click="ShareBtnClicked">
+            <Button Name="ShareBtn" Grid.Column="1" Margin="5" Content="Share" Background="#00BCF2"  BorderThickness="0" FontWeight="Bold" Click="ShareBtnClicked">
                 <Button.BitmapEffect>
                     <DropShadowBitmapEffect Color="black" Direction="1" ShadowDepth="0" Softness="10" Opacity="0.1"/>
                 </Button.BitmapEffect>

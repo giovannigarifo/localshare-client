@@ -64,7 +64,7 @@ namespace localshare
 
                 try
                 {
-                    dm.compressedPath = System.IO.Path.GetTempPath() + "localshare_tmp_" + Stopwatch.GetTimestamp().ToString() + ".zip";
+                    dm.compressedPath = Path.GetTempPath() + "localshare_tmp_" + Stopwatch.GetTimestamp().ToString() + ".zip";
                     ZipFile.CreateFromDirectory(dm.resourcePath, dm.compressedPath, CompressionLevel.NoCompression, true);
 
                 }
@@ -73,7 +73,7 @@ namespace localshare
                     if (exc is System.Security.SecurityException)
                     {
                         MessageBox.Show("ERROR: unable to retrieve the tmp folder path");
-                        System.Windows.Application.Current.Shutdown();
+                        Application.Current.Shutdown(1);
                     }
                     else if (exc is IOException)
                     {
@@ -81,12 +81,12 @@ namespace localshare
                         MessageBox.Show("ERROR: unable to compress the directory");
 
                         DeleteTempFile(dm.compressedPath);
-                        System.Windows.Application.Current.Shutdown();
+                        Application.Current.Shutdown(1);
                     }
                     else
                     {
                         MessageBox.Show("ERROR: unable to perform the creation of the compressed version of the file to be sent");
-                        System.Windows.Application.Current.Shutdown();
+                        Application.Current.Shutdown(1);
                     }
                 }
 
@@ -113,9 +113,9 @@ namespace localshare
                 }
                 catch (Exception FileInfoExc)
                 {
-                    System.Windows.MessageBox.Show("ERROR: unable to retrieve FileInfo, gracefully exiting application.");
+                    MessageBox.Show("ERROR: unable to retrieve FileInfo, gracefully exiting application.");
                     DeleteTempFile(dm.compressedPath);
-                    System.Windows.Application.Current.Shutdown();
+                    Application.Current.Shutdown(1);
                 }
 
                 this.Workers[i].RunWorkerAsync(wr); //fires the event with the WorkerResource as argument
@@ -144,7 +144,7 @@ namespace localshare
             }
 
             DeleteTempFile(dm.compressedPath);
-            System.Windows.Application.Current.Shutdown();
+            Application.Current.Shutdown(0);
         }
 
         private void DeleteTempFile(string compressedPath)
@@ -219,8 +219,14 @@ namespace localshare
             {
                 s.Connect(ipEndPoint);
             }
-            catch (Exception SocketExc)
+            catch (Exception exc)
             {
+                if( exc is InvalidOperationException) //the socket is listening
+                {
+                    s.Shutdown(SocketShutdown.Both);
+                    s.Close();
+                } 
+
                 MessageBox.Show("ERROR: unable to connect to the remote endpoint", "Prompt", MessageBoxButton.OK, MessageBoxImage.Warning, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
 
                 e.Cancel = true;
@@ -277,11 +283,11 @@ namespace localshare
             {
                 if (SendExc is ArgumentNullException || SendExc is ArgumentOutOfRangeException)
                 {
-                    System.Windows.MessageBox.Show("ERROR: worker error in send due to argument exception.");
+                    MessageBox.Show("ERROR: worker error in send due to argument exception.");
                 }
                 else
                 {
-                    System.Windows.MessageBox.Show("ERROR: worker error in send due to socket exception");
+                    MessageBox.Show("ERROR: worker error in send due to socket exception");
                 }
             }
 
@@ -307,7 +313,6 @@ namespace localshare
             {
                 //the worker job has been cancelled for some reason
                 MessageBox.Show("A WorkerJob has been cancelled for some reason", "Prompt", MessageBoxButton.OK, MessageBoxImage.Warning, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
-
             }
             else
             {
@@ -316,7 +321,7 @@ namespace localshare
                 {
                     //all jobs completed, exit the program
                     MessageBox.Show("All the jobs have been completed! shutting down the program gracefully", "Prompt", MessageBoxButton.OK, MessageBoxImage.Warning, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
-                    System.Windows.Application.Current.Shutdown();
+                    Application.Current.Shutdown(0);
                 }
                 else
                 {

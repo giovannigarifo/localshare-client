@@ -6,10 +6,10 @@
              xmlns:local="clr-namespace:localshare"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="500">
-    
+
     <!-- ListView of all the available users -->
-    <ScrollViewer HorizontalScrollBarVisibility="hidden" VerticalScrollBarVisibility="Auto" >
-        <ListView Name="UsersListView" ItemsSource="{Binding Path=AvailableUsers}" SelectionMode="Multiple" SelectedItem="">
+    <ScrollViewer HorizontalScrollBarVisibility="hidden" VerticalScrollBarVisibility="Auto">
+        <ListView Name="UsersListView" ItemsSource="{Binding Path=AvailableUsers}" SelectionMode="Multiple" SelectedItem="" BorderThickness="0">
             <!-- defining the template for each item of the list -->
             <ListView.ItemTemplate>
                 <DataTemplate>
@@ -21,7 +21,6 @@
 
                         <Image Grid.Row="0" Source="{Binding PhotoPath}" Width="150" Height="130" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         <TextBlock Grid.Row="1" Text="{Binding UserName}" HorizontalAlignment="Center" Margin="0,5,0,0" FontSize="12"/>
-
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>

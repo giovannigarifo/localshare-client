@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace localshare
@@ -17,7 +12,7 @@ namespace localshare
     /// </summary>
     public partial class App : Application
     {
-
+        MainWindow appWindow;
 
         /// <summary>
         /// 
@@ -32,7 +27,7 @@ namespace localshare
         {
 
             //create the startup event windows explicitly
-            MainWindow appWindow = new MainWindow();
+            appWindow = new MainWindow();
 
             //activity to be performed before showing the actual main window
             appWindow.Title = "LocalShare via app.xaml.cs";
@@ -64,5 +59,28 @@ namespace localshare
             appWindow.Show();
         }
 
+
+        /// <summary>
+        /// 
+        /// This method is called when the exit event has been fired. The exit event cannot be cancelled.
+        /// 
+        /// It's responsible to check if the application is exiting with status code equal to succes sor failure
+        /// 
+        /// </summary>
+        /// <param name="sender">the object that fired the event</param>
+        /// <param name="e">arguments of the event</param>
+        private void Application_Exit(object sender, ExitEventArgs e)
+        {
+
+            if (e.ApplicationExitCode == 1) //failure
+            {
+                MessageBox.Show("[debug] app exiting with status=1 (failure)", "Prompt", MessageBoxButton.OK, MessageBoxImage.Warning, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
+            }
+            else //success
+            {
+                MessageBox.Show("[debug] app exiting with status=0 (success)", "Prompt", MessageBoxButton.OK, MessageBoxImage.Warning, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
+            }
+
+        }
     }
 }
