@@ -19,7 +19,7 @@
                             <RowDefinition Height="20"/>
                         </Grid.RowDefinitions>
 
-                        <Image Grid.Row="0" Source="{Binding PhotoPath}" Width="150" Height="130" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <Image Grid.Row="0" Source="{Binding UserPhoto}" Width="150" Height="130" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         <TextBlock Grid.Row="1" Text="{Binding UserName}" HorizontalAlignment="Center" Margin="0,5,0,0" FontSize="12"/>
                     </Grid>
                 </DataTemplate>

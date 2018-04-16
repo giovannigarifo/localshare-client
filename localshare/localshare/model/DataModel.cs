@@ -3,11 +3,12 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Web.Script.Serialization;
 using System.Windows;
 
 namespace localshare.model
 {
-
     /// <summary>
     /// 
     /// ViewModel of the Application
@@ -20,66 +21,43 @@ namespace localshare.model
     /// - support methods: used to perform secondary task (add a single element, ecc)
     ///
     /// </summary>
-    class DataModel : INotifyPropertyChanged
+    public class DataModel : INotifyPropertyChanged
     {
-
         /****************
          *  Properties
          */
 
-        //collection of available user on the LAN
-        private ObservableCollection<User> availableUsers;
-        public ObservableCollection<User> AvailableUsers
-        {
-            get { return this.availableUsers; }
-            set { this.availableUsers = value; }
-        }
+        FileSystemWatcher fsWatcher; //DB File watcher
+        string dbPath; //path on file system of the db file
+        OnlineUsers onlineUsers; //contains information about the logged user and a list of remote users
 
-        //collection of the selected users (selected by the user)
-        private ObservableCollection<User> selectedUsers;
-        public ObservableCollection<User> SelectedUsers
-        {
-            get { return this.selectedUsers; }
-            set { this.selectedUsers = value; }
-        }
-
-        //path of the file or directory to be shared with the selected users
-        public string resourcePath;
+        public ObservableCollection<User> AvailableUsers { get; set; } //collection of available user on the LAN
+        public ObservableCollection<User> SelectedUsers { get; set; } //collection of the selected users (selected by the user)
         
-        //flag for testing if resource is a directory or not
-        public Boolean resourcePath_isDirectory;
-
-        //filename or directory name of the resource to be sent, shrinked from resourcePath
-        public string resourceName;
-
-        //path of the compressed temporary file that is actually sended via the socket
-        public string compressedPath;
-
+        public string resourcePath; //path of the file or directory to be shared with the selected users
+        public Boolean resourcePath_isDirectory; //flag for testing if resource is a directory or not
+        public string resourceName; //filename or directory name of the resource to be sent, shrinked from resourcePath
+        public string compressedPath; //path of the compressed temporary file that is actually sended via the socket
 
         /****************
          *  Events 
          */
         public event PropertyChangedEventHandler PropertyChanged;
-        
 
         /*****************
          *  Constructor 
          */
         public DataModel()
         {
-            //populating available users collection
-            this.AvailableUsers = new ObservableCollection<User>();
+            //instantiate watcher
+            this.dbPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\QuickShare";
+            this.fsWatcher = new FileSystemWatcher(this.dbPath, "*.db");
+            this.fsWatcher.NotifyFilter = NotifyFilters.LastWrite;
+            this.fsWatcher.Changed += dbFileChanged;
 
-            this.AddAvailableUser("user_name_1", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
-            this.AddAvailableUser("User_name_2", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
-            this.AddAvailableUser("User_name_3", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
-            this.AddAvailableUser("User_name_4", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
-            this.AddAvailableUser("User_name_5", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
-            this.AddAvailableUser("User_name_6", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
-            this.AddAvailableUser("User_name_7", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
-            this.AddAvailableUser("User_name_8", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
-            this.AddAvailableUser("User_name_9", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
-            this.AddAvailableUser("User_name_10", "C:\\Users\\giova\\Workspace\\PDS-malnati\\localshare-client\\localshare\\localshare\\resources\\profile-pic.png", "127.0.0.1");
+            //the first time read the db manually and load the user collection
+            dbRead();
+            this.AvailableUsers = onlineUsers.UserList;
 
             //instantiation of the selected users collection
             this.SelectedUsers = new ObservableCollection<User>();
@@ -107,10 +85,55 @@ namespace localshare.model
 
             } catch (Exception exc) {
 
-                MessageBox.Show("ERROR: unable to read resourcePath file attributes or to shrink resourcePath to filename/dirname");
+                Console.WriteLine("[ERROR] unable to read resourcePath file attributes or to shrink resourcePath to filename/dirname");
                 System.Windows.Application.Current.Shutdown();
             }
 
+        }
+
+        /// <summary>
+        /// Read the DB from QuickShare.db and load all information in the collections
+        /// </summary>
+        private void dbRead()
+        {
+            //load data from db
+            using (FileStream fs = new FileStream(this.dbPath + "\\QuickShare.db", FileMode.Open, FileAccess.Read))
+            {
+                JavaScriptSerializer deserializator = new JavaScriptSerializer();
+
+                long fileLen = fs.Length;
+                byte[] buf = new byte[fileLen];
+
+                fs.Read(buf, 0, (int)fileLen);
+                String jsonStr = Encoding.UTF8.GetString(buf); //whole db in json format
+                onlineUsers = deserializator.Deserialize<OnlineUsers>(jsonStr);
+            }
+
+            for (int i = 0; i < onlineUsers.UserList.Count; i++)
+            {
+                User user = onlineUsers.UserList[i];
+
+                user.RowIndex = i / 3; //row index in grid
+                user.ColIndex = i % 3; //col index in grid
+
+                if (user.PhotoVersion == 0)
+                {
+                    user.UserPhoto = new Uri("pack://application:,,,/Resources/DefaultAvatar.bmp", UriKind.RelativeOrAbsolute);
+
+                } else user.UserPhoto = new Uri( this.dbPath + "\\Photos\\" + user.UserId + "-" + user.PhotoVersion);
+                
+                this.NotifyPropertyChanged("AvailableUsers");
+            }
+        }
+
+        /// <summary>
+        /// The database file has been changed by the server, update the collections to reflect the changes
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void dbFileChanged(object sender, FileSystemEventArgs e)
+        {
+            dbRead();
         }
 
 
@@ -125,18 +148,6 @@ namespace localshare.model
                 this.PropertyChanged(this, new PropertyChangedEventArgs(propName));
         }
 
-
-        //Create a User and add him to the AvailableUsers list
-        public void AddAvailableUser(string UserName, string PhotoPath, string IpAddress)
-        {
-            int auLen = this.AvailableUsers.Count();
-            int row = auLen / 3; //row index in grid
-            int col = auLen % 3; //col index in grid
-
-            this.AvailableUsers.Add(new User(UserName, new Uri(PhotoPath), IpAddress, row, col));
-
-            this.NotifyPropertyChanged("AvailableUsers");
-        }
 
         //add a user to the SelectedUsers list
         public void AddSelectedUser(User u)

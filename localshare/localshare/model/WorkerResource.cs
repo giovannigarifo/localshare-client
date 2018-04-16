@@ -24,6 +24,8 @@ namespace localshare.model
         private int workerID; //the position in the Workers array
         public int WorkerID { get; set; }
 
+        private int remainingTimeInSeconds; //where the worker stores the calculated remaining time after each chunk sended
+        public int RemainingTimeInSeconds { get; set; }
 
         /*****************
          *  Constructor 
@@ -32,7 +34,7 @@ namespace localshare.model
         {
             this.CompressedPath = compressedPath;
             this.Recipient = recipient;
-            this.ResourceName = resourceName;            
+            this.ResourceName = resourceName;
 
             //retrieve information about the actual file that must be sent
             try

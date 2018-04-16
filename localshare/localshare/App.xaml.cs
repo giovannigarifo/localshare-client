@@ -1,4 +1,5 @@
-﻿using System;
+﻿using localshare.model;
+using System;
 using System.IO;
 using System.Windows;
 
@@ -13,7 +14,8 @@ namespace localshare
     public partial class App : Application
     {
         MainWindow appWindow;
-
+        DataModel dataModel;
+        
         /// <summary>
         /// 
         /// This method is called when the startup event has been fired. 
@@ -26,11 +28,14 @@ namespace localshare
         private void ApplicationStartupHandler(object sender, StartupEventArgs e)
         {
 
+            //create model
+            dataModel = new DataModel();
+
             //create the startup event windows explicitly
-            appWindow = new MainWindow();
+            appWindow = new MainWindow(dataModel);
 
             //activity to be performed before showing the actual main window
-            appWindow.Title = "LocalShare via app.xaml.cs";
+            appWindow.Title = "LocalShare";
 
             /*
              * Check received argument from cmd line (file path)
@@ -38,7 +43,7 @@ namespace localshare
             //if no argument is received shutdown the application immediatly
             if (e.Args.Length != 1)
             {
-                MessageBox.Show("wrong argument number");
+                Console.WriteLine("[ERROR] wrong argument number.");
                 Shutdown();
             }
 
@@ -50,7 +55,7 @@ namespace localshare
             }
             catch (Exception exc)
             {
-                MessageBox.Show("incorrect file path");
+                Console.WriteLine("[ERROR] incorrect file path.");
                 Shutdown();
             }
             
@@ -74,12 +79,15 @@ namespace localshare
 
             if (e.ApplicationExitCode == 1) //failure
             {
-                MessageBox.Show("[debug] app exiting with status=1 (failure)", "Prompt", MessageBoxButton.OK, MessageBoxImage.Warning, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
+                Console.WriteLine("[DEBUG] app exiting with status=1 (failure).");
             }
             else //success
             {
-                MessageBox.Show("[debug] app exiting with status=0 (success)", "Prompt", MessageBoxButton.OK, MessageBoxImage.Warning, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
+                Console.WriteLine("[ERROR] app exiting with status=0 (success).");
             }
+
+            if (File.Exists(dataModel.compressedPath))
+                File.Delete(dataModel.compressedPath);
 
         }
     }

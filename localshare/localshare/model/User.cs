@@ -1,69 +1,60 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Web.Script.Serialization;
 
 namespace localshare.model
 {
-    class User : INotifyPropertyChanged
+    public class User : INotifyPropertyChanged
     {
         /*Properties with get/set-ters */
+        public UInt32 UserId { get; set; }
 
-        private string userName;
-        public string UserName
-        {
-            get { return this.userName; }
-            set { this.userName = value; }
-        }
+        public string UserName { get; set; }
 
-        private Uri photoPath;
-        public Uri PhotoPath
-        {
-            get { return this.photoPath; }
-            set { this.photoPath = value; }
-        }
+        public string Address { get; set; }
 
-        private string ipAddress;
-        public string IpAddress
-        {
-            get { return this.ipAddress; }
-            set { this.ipAddress = value; }
-        }
+        public UInt32 PhotoVersion { get; set; }
 
-        private int rowIndex;
-        public int RowIndex
-        {
-            get { return this.rowIndex; }
-            set { this.rowIndex = value; }
-        }
+        public Uri UserPhoto { get; set; }
 
-        private int colIndex;
-        public int ColIndex
-        {
-            get { return this.colIndex; }
-            set { this.colIndex = value; }
-        }
+        [ScriptIgnore]
+        public int RowIndex { get; set; }
 
-        private int percComplete;
-        public int PercComplete
-        {
-            get { return this.percComplete; }
-            set { this.percComplete = value; }
-        }
+        [ScriptIgnore]
+        public int ColIndex { get; set; }
+
+        [ScriptIgnore]
+        public int PercComplete { get; set; }
+
+        [ScriptIgnore]
+        public string MsgTimeRemaining { get; set; }
+
 
         /* event handlers */
         public event PropertyChangedEventHandler PropertyChanged;
 
-
         /*****************
-         *  Constructor 
+         *  Constructors
          */
-        public User( string UserName, Uri PhotoPath, string IpAddress, int RowIndex, int ColIndex )
+
+        public User(uint userId, string userName, string address, uint photoVersion, Uri userPhoto)
         {
-            this.UserName = UserName;
-            this.PhotoPath = PhotoPath; //todo: CHECK IF VALID PATH
-            this.IpAddress = IpAddress;
-            this.RowIndex = RowIndex;
-            this.ColIndex = ColIndex;
-            this.PercComplete = 0;
+            //obtained from serialized db object
+            UserId = userId;
+            UserName = userName;
+            Address = address;
+            PhotoVersion = photoVersion;
+            UserPhoto = userPhoto;
+
+            //locally generated attributes
+            RowIndex = 0;
+            ColIndex = 0;
+            PercComplete = 0;
+            MsgTimeRemaining = "Calculating remaining time statistics...";
+        }
+
+        public User()
+        {
         }
 
         /*****************
@@ -71,7 +62,7 @@ namespace localshare.model
          */
         public override string ToString()
         {
-            return "UserName: " + UserName + ". PhotoPath: " + PhotoPath + ". IpAddress: " + IpAddress + ".";
+            return "UserName: " + UserName + ". IpAddress: " + Address + ".";
         }
 
         //implementation of the method required by INotifyPropertyChanged interface
@@ -82,13 +73,27 @@ namespace localshare.model
         }
 
 
-        //Create a User and add him to the AvailableUsers list
-        public void IncrementPercComplete(int perc)
+        //increment perComplete and notify for changed property
+        public void updatePercComplete(int perc)
         {
             this.PercComplete = perc;
 
             this.NotifyPropertyChanged("PercComplete");
         }
+
+        //update the Message to be showed inside the progressbar with the remaining time
+        public void updateMsgTimeRemaining(int remainingTimeInSeconds)
+        {
+            if (remainingTimeInSeconds == -1)
+                this.MsgTimeRemaining = "Waiting for statistics...";
+            else if (remainingTimeInSeconds == 0)
+                this.MsgTimeRemaining = "Finished!";
+            else
+                this.MsgTimeRemaining = "Remaining time in seconds: " + remainingTimeInSeconds;
+
+            this.NotifyPropertyChanged("msgTimeRemaining");
+        }
+
 
     }
 

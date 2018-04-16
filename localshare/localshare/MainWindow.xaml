@@ -10,7 +10,7 @@
         Title="Our WPF demo" Height="600" Width="500" ResizeMode="NoResize" 
         Background="#EEEEEE"
         ShowInTaskbar="False"
-        Topmost="True" WindowStartupLocation="CenterScreen">
+        Topmost="false" WindowStartupLocation="CenterScreen">
    
 
 
