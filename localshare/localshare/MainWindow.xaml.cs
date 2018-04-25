@@ -267,6 +267,24 @@ namespace localshare
                 //s.Send(msgHeader, 0, msgHeaderLen, SocketFlags.None);
                 Utils.SendExactly(s, msgHeader);
 
+                //send photo of the user who send the file
+                if(dm.onlineUsers.MyPhotoVersion > 0)
+                {
+                    //send photo length and photo if photo is not the default one
+                    String PhotoPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\QuickShare\\Photos\\myphoto-" + dm.onlineUsers.MyPhotoVersion + ".jpg";
+                    FileInfo fi_userPhoto = new FileInfo(PhotoPath);
+                    byte[] userPhotoLen = BitConverter.GetBytes(Convert.ToInt32(fi_userPhoto.Length)); //UserPhotoLength[4 bytes]
+                    Utils.SendExactly(s, userPhotoLen);
+                    s.SendFile(PhotoPath);
+
+                } else
+                {
+                    //if the user photo is the default one just send the length = 0
+                    byte[] userPhotoLen = BitConverter.GetBytes(Convert.ToInt32(0)); //UserPhotoLength[4 bytes]
+                    Utils.SendExactly(s, userPhotoLen);
+                }
+
+
                 // waiting for response from server
                 recvBuf = Utils.ReceiveExactly(s, 5);
                 //s.Receive(recvBuf, SocketFlags.None);
