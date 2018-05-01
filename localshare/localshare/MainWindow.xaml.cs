@@ -39,7 +39,7 @@ namespace localshare
             /*
              * Create the UserList custom control and attach it to ContentControl defined in the MainWindow
              */
-            this.uList = new UserList();
+            this.uList = new UserList(this.SelectAllBtn); //the UserList control receives the button so that it can chage the text
             this.contentControl.Content = this.uList;
         }
 
@@ -154,7 +154,26 @@ namespace localshare
 
             Application.Current.Shutdown(0);
         }
-       
+
+        /*
+         * action to take when the "SELECT ALL" button has been clicked (event fired): select all the users in the collection
+         */
+        private void SelectAllBtnClicked(object sender, RoutedEventArgs e)
+        {
+            if(this.uList.UsersListView.SelectedItems.Count == this.uList.UsersListView.Items.Count)
+            {
+                this.uList.UsersListView.UnselectAll();
+                this.SelectAllBtn.Content = "SELECT ALL";
+            }
+            else
+            {
+                this.uList.UsersListView.SelectAll();
+                this.SelectAllBtn.Content = "DESELECT ALL";
+            }
+                
+        }
+
+
 
         private void ObtainResourceToBeSent()
         {

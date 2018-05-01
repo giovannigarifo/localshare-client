@@ -5,22 +5,40 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:localshare"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="500">
+             d:DesignHeight="450" d:DesignWidth="650">
 
     <!-- ListView of all the available users -->
     <ScrollViewer HorizontalScrollBarVisibility="hidden" VerticalScrollBarVisibility="Auto">
-        <ListView Name="UsersListView" ItemsSource="{Binding Path=AvailableUsers}" SelectionMode="Multiple" SelectedItem="" BorderThickness="0">
+        <ListView Name="UsersListView" SelectionChanged="UsersListView_SelectionChanged" ItemsSource="{Binding Path=AvailableUsers}" SelectionMode="Multiple" SelectedItem="" BorderThickness="0">
             <!-- defining the template for each item of the list -->
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <Grid>
+                    <Grid Width="150" Height="180" Margin="5">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="130"/>
-                            <RowDefinition Height="20"/>
+                            <RowDefinition Height="150"/>
+                            <RowDefinition Height="30"/>
                         </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                        </Grid.ColumnDefinitions>
 
-                        <Image Grid.Row="0" Source="{Binding UserPhoto}" Width="150" Height="130" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        <TextBlock Grid.Row="1" Text="{Binding UserName}" HorizontalAlignment="Center" Margin="0,5,0,0" FontSize="12"/>
+                        <!-- user photo -->
+                        <Ellipse Grid.Row="0" Grid.Column="0" Height="150" Width="150" Stroke="{StaticResource colorPrimary}"
+                                 StrokeThickness="2">
+                            <Ellipse.Fill>
+                                <ImageBrush ImageSource="{Binding UserPhoto}"/>
+                            </Ellipse.Fill>
+                        </Ellipse>
+                        <!--<Image Grid.Row="0" Grid.Column="0" Source="{Binding UserPhoto}"  Width="150" Height="150" 
+                               Margin="0"/>-->
+
+                        <!-- user name -->
+                        <Border Grid.Row="1" Grid.Column="0" BorderBrush="{x:Null}" Height="30" Width="150">
+                            <TextBlock  Text="{Binding UserName}" VerticalAlignment="Center" 
+                                        TextAlignment="Center" TextTrimming="CharacterEllipsis"
+                                        FontSize="16" FontFamily="Segoe UI" FontStretch="Condensed"
+                                        FontWeight="SemiBold"/>
+                        </Border>
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
@@ -32,11 +50,20 @@
                             <RowDefinition Height="*" />
                             <RowDefinition Height="*" />
                             <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="155" />
-                            <ColumnDefinition Width="155" />
-                            <ColumnDefinition Width="155" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                     </Grid>
                 </ItemsPanelTemplate>

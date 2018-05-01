@@ -19,11 +19,11 @@
                             <ColumnDefinition Width="100"/>
                             <ColumnDefinition Width="400" />
                         </Grid.ColumnDefinitions>
-                        
+
                         <!-- Col0 User profile picture -->
                         <Image Grid.Column="0" Source="{Binding PhotoPath}" Width="100" Height="100" />
-        
-                         <!-- Col1 Progress bar and user info-->
+
+                        <!-- Col1 Progress bar and user info-->
                         <Grid Grid.Column="1">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="70"/>
@@ -80,5 +80,5 @@
 
 
 
-   
+
 </UserControl>

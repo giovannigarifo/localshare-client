@@ -7,11 +7,12 @@
         mc:Ignorable="d"
         
         FontSize="14" FontFamily="Roboto"
-        Title="Our WPF demo" Height="600" Width="500" ResizeMode="NoResize" 
-        Background="#EEEEEE"
+        Title="" Height="650" Width="545" ResizeMode="NoResize" 
+        Background="{StaticResource colorBackground}"
         ShowInTaskbar="False"
-        Topmost="false" WindowStartupLocation="CenterScreen">
-   
+        Topmost="false" WindowStartupLocation="CenterScreen" WindowStyle="None"
+        BorderThickness="1" BorderBrush="{StaticResource colorPrimary}">
+
 
 
     <Grid>
@@ -31,23 +32,30 @@
         <!-- Grid inside second row -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="120" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="100" />
                 <ColumnDefinition Width="100" />
             </Grid.ColumnDefinitions>
 
+            <!--SELECT ALL-->
+            <Button Name="SelectAllBtn" Style="{StaticResource SelectAllBtnStyle}" Grid.Column="0" Margin="5" 
+                    Background="{StaticResource colorLightGrey}" Width="110" Content="SELECT ALL" BorderThickness="0" 
+                    FontWeight="Bold" FontFamily="Segoe UI" Click="SelectAllBtnClicked">
+            </Button>
+
             <!--Cancel-->
-            <Button Name="CancelBtn" Grid.Column="2" Margin="5" Background="#FAFAFA" Content="Cancel" BorderThickness="0" FontWeight="Bold" Click="CancelBtnClicked">
-                <Button.BitmapEffect>
-                    <DropShadowBitmapEffect Color="Black" Direction="1" ShadowDepth="0" Softness="10" Opacity="0.1"/>
-                </Button.BitmapEffect>
+            <Button Name="CancelBtn" Style="{StaticResource CalcelBtnStyle}" Grid.Column="3" Margin="5" 
+                    Background="{StaticResource colorLightGrey}" 
+                    Content="CLOSE" FontWeight="Bold" FontFamily="Segoe UI" 
+                    Click="CancelBtnClicked">
             </Button>
 
             <!--Share-->
-            <Button Name="ShareBtn" Grid.Column="1" Margin="5" Content="Share" Background="#00BCF2"  BorderThickness="0" FontWeight="Bold" Click="ShareBtnClicked">
-                <Button.BitmapEffect>
-                    <DropShadowBitmapEffect Color="black" Direction="1" ShadowDepth="0" Softness="10" Opacity="0.1"/>
-                </Button.BitmapEffect>
+            <Button Name="ShareBtn" Style="{StaticResource ShareBtnStyle}" Grid.Column="2" Margin="5" Content="SHARE" 
+                    Background="{StaticResource colorPrimary}"
+                    BorderThickness="0"  FontWeight="Bold" FontFamily="Segoe UI" 
+                    Click="ShareBtnClicked">
             </Button>
         </Grid>
 
