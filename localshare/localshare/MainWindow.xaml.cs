@@ -10,9 +10,6 @@ using localshare.model;
 
 namespace localshare
 {
-    /// <summary>
-    /// Logica di interazione per MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         /// <summary>
@@ -139,6 +136,7 @@ namespace localshare
             this.uProgress = new UserProgress();
             this.contentControl.Content = this.uProgress;
             this.ShareBtn.Visibility = Visibility.Collapsed;
+            this.SelectAllBtn.Visibility = Visibility.Collapsed;
         }
 
 

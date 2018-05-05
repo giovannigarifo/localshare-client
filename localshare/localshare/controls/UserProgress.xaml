@@ -5,36 +5,58 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:localshare"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="500">
+             d:DesignHeight="450" d:DesignWidth="650">
 
     <!-- ListView of file transfers -->
     <ScrollViewer HorizontalScrollBarVisibility="hidden" VerticalScrollBarVisibility="Auto" >
-        <ListView Name="UsersListView" ItemsSource="{Binding Path=SelectedUsers}">
+        <ListView Name="UsersListView" ItemsSource="{Binding Path=SelectedUsers}" BorderThickness="0" SelectionMode="Single">
             <!-- defining the template for each item of the list -->
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <Grid>
-
+                    <Grid Margin="5" Height="100">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="400" />
+                            <ColumnDefinition Width="550" />
                         </Grid.ColumnDefinitions>
 
                         <!-- Col0 User profile picture -->
-                        <Image Grid.Column="0" Source="{Binding PhotoPath}" Width="100" Height="100" />
+                        <Ellipse Grid.Column="0" Height="100" Width="100" Stroke="{StaticResource colorPrimary}"
+                                 StrokeThickness="2">
+                            <Ellipse.Fill>
+                                <ImageBrush ImageSource="{Binding UserPhoto}"/>
+                            </Ellipse.Fill>
+                        </Ellipse>
 
                         <!-- Col1 Progress bar and user info-->
-                        <Grid Grid.Column="1">
+                        <Grid Grid.Column="1" Height="100">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="70"/>
+                                <RowDefinition Height="36"/>
+                                <RowDefinition Height="30"/>
                                 <RowDefinition Height="30"/>
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Height="70" Text="{Binding UserName}" FontSize="18" Margin="10"/>
-                            <ProgressBar Grid.Row="1" Height="30" BorderThickness="1" Minimum="0" Maximum="100"  Value="{Binding PercComplete}" />
-                            <TextBlock Grid.Row="1" Height="30" Text="{Binding MsgTimeRemaining}" Margin="0, 7, 0, 0" HorizontalAlignment="Center"/>
-                        </Grid>
+                            <!-- username -->
+                            <TextBlock  Grid.Row="0" Margin="10,0,0,0" Text="{Binding UserName}" VerticalAlignment="Center" 
+                                        TextTrimming="CharacterEllipsis"
+                                        FontSize="16" FontFamily="Segoe UI" FontStretch="Condensed"
+                                        FontWeight="SemiBold"/>
 
+                            <!-- progress bar -->
+                            <Grid Grid.Row="1" Width="400" Height="30" Margin="10,0,0,0" HorizontalAlignment="Left">
+                                <ProgressBar Height="30" BorderThickness="0 2 0 2"
+                                         BorderBrush="{StaticResource colorPrimary}" Background="{StaticResource colorLightGrey}"
+                                         Minimum="0" Maximum="100" Value="{Binding PercComplete}" />
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Text="{Binding MsgTimeRemaining}" TextTrimming="CharacterEllipsis"
+                                       FontSize="12" FontFamily="Segoe UI" FontStretch="Condensed" FontWeight="Normal"/>
+                            </Grid>
+
+                            <!-- additional info -->
+                            <TextBlock  Grid.Row="2" Margin="10,0,0,0" Text="{Binding MsgStatus}" VerticalAlignment="Center" 
+                                        TextTrimming="CharacterEllipsis"
+                                        FontSize="12" FontFamily="Segoe UI" FontStretch="Condensed"
+                                        FontWeight="Normal"/>
+                        </Grid>
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
@@ -56,7 +78,7 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="500" />
+                            <ColumnDefinition Width="525" />
                         </Grid.ColumnDefinitions>
                     </Grid>
                 </ItemsPanelTemplate>

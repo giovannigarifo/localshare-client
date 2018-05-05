@@ -25,7 +25,13 @@ namespace localshare
         private void UsersListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (this.UsersListView.SelectedItems.Count == this.UsersListView.Items.Count)
+            {
                 this.SelectAllButton.Content = "DESELECT ALL";
+            }
+            else if (this.UsersListView.SelectedItems.Count < this.UsersListView.Items.Count)
+            {
+                this.SelectAllButton.Content = "SELECT ALL";
+            }
         }
     }
 }

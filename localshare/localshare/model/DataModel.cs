@@ -12,7 +12,7 @@ namespace localshare.model
 {
     /// <summary>
     /// 
-    /// ViewModel of the Application
+    /// Model of the Application
     /// 
     /// it consist of a series of collection that are loaded at app startup,
     /// and some methods divided into:
@@ -88,7 +88,7 @@ namespace localshare.model
             {
 
                 Console.WriteLine("[ERROR] unable to read resourcePath file attributes or to shrink resourcePath to filename/dirname");
-                System.Windows.Application.Current.Shutdown();
+                Application.Current.Shutdown();
             }
 
         }
