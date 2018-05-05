@@ -420,6 +420,7 @@ namespace localshare
 
             u.updatePercComplete(e.ProgressPercentage);
             u.updateMsgTimeRemaining(wr.RemainingTimeInSeconds);
+            u.updateMsgTimeStatus(e.ProgressPercentage);
         }
         
 

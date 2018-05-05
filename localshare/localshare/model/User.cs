@@ -29,6 +29,9 @@ namespace localshare.model
         [ScriptIgnore]
         public string MsgTimeRemaining { get; set; }
 
+        [ScriptIgnore]
+        public string MsgStatus { get; set; }
+
 
         /* event handlers */
         public event PropertyChangedEventHandler PropertyChanged;
@@ -40,17 +43,18 @@ namespace localshare.model
         public User(uint userId, string userName, string address, uint photoVersion, Uri userPhoto)
         {
             //obtained from serialized db object
-            UserId = userId;
-            UserName = userName;
-            Address = address;
-            PhotoVersion = photoVersion;
-            UserPhoto = userPhoto;
+            this.UserId = userId;
+            this.UserName = userName;
+            this.Address = address;
+            this.PhotoVersion = photoVersion;
+            this.UserPhoto = userPhoto;
 
             //locally generated attributes
-            RowIndex = 0;
-            ColIndex = 0;
-            PercComplete = 0;
-            MsgTimeRemaining = "Calculating remaining time statistics...";
+            this.RowIndex = 0;
+            this.ColIndex = 0;
+            this.PercComplete = 0;
+            this.MsgTimeRemaining = "Calculating remaining time statistics...";
+            this.MsgStatus = "Preparing file sending...";
         }
 
         public User()
@@ -87,11 +91,27 @@ namespace localshare.model
             if (remainingTimeInSeconds == -1)
                 this.MsgTimeRemaining = "Waiting for statistics...";
             else if (remainingTimeInSeconds == 0)
-                this.MsgTimeRemaining = "Finished!";
+                this.MsgTimeRemaining = "100";
             else
                 this.MsgTimeRemaining = "Remaining time in seconds: " + remainingTimeInSeconds;
 
-            this.NotifyPropertyChanged("msgTimeRemaining");
+            this.NotifyPropertyChanged("MsgTimeRemaining");
+        }
+
+
+        //update the Message to be showed inside the progressbar with the remaining time
+        public void updateMsgTimeStatus(int WorkerProgressPercentage)
+        {
+            if (WorkerProgressPercentage > 0 && WorkerProgressPercentage < 5)
+                this.MsgStatus = "Sending started...";
+            else if (WorkerProgressPercentage == 50)
+                this.MsgStatus = "Half file sended...";
+            else if (WorkerProgressPercentage > 90 && WorkerProgressPercentage < 100)
+                this.MsgStatus = "Hold on...last bytes left!";
+            else if (WorkerProgressPercentage == 100)
+                this.MsgStatus = "File correctly sended.";
+
+            this.NotifyPropertyChanged("MsgStatus");
         }
 
 
