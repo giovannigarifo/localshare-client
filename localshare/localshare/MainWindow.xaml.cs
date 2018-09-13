@@ -118,7 +118,7 @@ namespace localshare
                 {
                     wr = new WorkerResource(dm.compressedPath, dm.resourceName, u, i);
                 }
-                catch (Exception FileInfoExc)
+                catch (Exception)
                 {
                     Console.WriteLine("[ERROR] unable to retrieve FileInfo, gracefully exiting application.");
                     Application.Current.Shutdown(1);
@@ -150,6 +150,7 @@ namespace localshare
                 this.Workers[i].CancelAsync(); //set the CancellationPending property of each worker to true
             }
 
+            //TODO: forse meglio aspettare l'uscita dei background worker prima di fare la shutdown
             Application.Current.Shutdown(0);
         }
 
@@ -251,20 +252,23 @@ namespace localshare
                 }
 
                 Console.WriteLine("[ERROR] unable to connect to the remote endpoint.");
-
                 e.Cancel = true;
                 return;
             }
 
             try
             {
+                //TODO: INVIARE NOME UTENTE LOCALE
+
                 // 1) send header
-                int un_len = recipient.UserName.Length * 2; //coded in Unicode (UTF-16)
+                int un_len = dm.onlineUsers.MyUserName.Length * 2; //coded in Unicode (UTF-16)
                 int rn_len = wr.ResourceName.Length * 2;
 
                 byte[] sendf = System.Text.Encoding.ASCII.GetBytes("SENDF"); //SENDF[5 bytes]
                 byte[] userNameLen = BitConverter.GetBytes(Convert.ToInt32(un_len)); //UserNameLength[4 bytes]
-                byte[] userName = System.Text.Encoding.Unicode.GetBytes(recipient.UserName); //UserName[UserNameLength]
+
+                byte[] userName = System.Text.Encoding.Unicode.GetBytes(dm.onlineUsers.MyUserName); //UserName[UserNameLength]
+
                 byte[] isFolder = BitConverter.GetBytes(dm.resourcePath_isDirectory); //isFolder[1 byte]
                 byte[] fileNameLen = BitConverter.GetBytes(Convert.ToInt32(rn_len)); //FileNameLength[4 bytes] 
                 byte[] fileName = System.Text.Encoding.Unicode.GetBytes(wr.ResourceName); //FileName[FileNameLength]
@@ -304,12 +308,10 @@ namespace localshare
 
                 // waiting for response from server
                 recvBuf = Utils.ReceiveExactly(s, 5);
-                //s.Receive(recvBuf, SocketFlags.None);
-
-                if (System.Text.Encoding.ASCII.GetString(recvBuf, 0, 5) != "OK---")
-                {
+               
+                if (recvBuf == null || System.Text.Encoding.ASCII.GetString(recvBuf, 0, 5) != "OK---")
                     throw new Exception(); //TODO                    
-                }
+
                 Console.WriteLine("[DEBUG] BackgroundWorker" + wr.WorkerID + " received response from remote endpoint: " + System.Text.Encoding.ASCII.GetString(recvBuf, 0, 5));
 
                 // 2) send file blocks 
@@ -327,19 +329,21 @@ namespace localshare
                             Console.WriteLine("[DEBUG] BackgroundWorker" + wr.WorkerID + " sending last chunk");
                             Utils.SendExactly(s, datachunk, numRead); //last chunk, or file smaller than a MTU
                         }
-                        else
-                        {
-                            Utils.SendExactly(s, datachunk); //whole chunk
-                        }
+                        else Utils.SendExactly(s, datachunk); //whole chunk
 
                         numSent += numRead;
 
                         // 3) Update the progress bar and expected remainingtime
-
                         if (sw.ElapsedMilliseconds / 1000 > n_kBps && sw.IsRunning) //every second
                         {
-                            remainingTimeInSeconds = (double)(fileSize / numSent);
                             n_kBps++;
+                            try {
+                                remainingTimeInSeconds = (double)(fileSize - numSent) / (double)(numSent / (sw.ElapsedMilliseconds/1000));
+                            }
+                            catch (Exception) {
+                                Console.WriteLine("[DEBUG] division by zero when trying to evaluate the bitrate.");
+                            }
+                            
                         }
                         wr.RemainingTimeInSeconds = (int)remainingTimeInSeconds;
 
@@ -347,29 +351,37 @@ namespace localshare
 
                         (sender as BackgroundWorker).ReportProgress(percComplete, wr);
                     }
+
+                    sw.Stop();
                 }
             }
             catch (Exception SendExc)
             {
                 if (SendExc is ArgumentNullException || SendExc is ArgumentOutOfRangeException)
-                {
                     Console.WriteLine("[ERROR] BackgroundWorker" + wr.WorkerID + " catched ArgumentNullException or ArgumentOutOfRangeException.");
-                }
+                else if(SendExc is SocketException)
+                    Console.WriteLine("[WARNING] Send timeout (5 seconds elapsed from send request) in BackgroundWorker" + wr.WorkerID);
                 else
-                {
                     Console.WriteLine("[ERROR] BackgroundWorker" + wr.WorkerID + " catched generic Exception during socket send process.");
-                }
+                
+                //request cancellation
+                e.Cancel = true;
             }
 
-            sw.Stop();
-
-            //test for pending shutdown request and Release the socket and all the resources.
+            //test for pending cancellation request and Release the socket and all the resources.
             if (this.Workers[WorkerID].CancellationPending == true)
+            {
+                //update progress bar to inform user that the worker cancelled is execution
                 e.Cancel = true;
-
-            //update progress bar to inform user that the worker completed the process
-            wr.RemainingTimeInSeconds = 0;
-            (sender as BackgroundWorker).ReportProgress(percComplete, wr);
+                wr.RemainingTimeInSeconds = -2; //notify error in sending
+                (sender as BackgroundWorker).ReportProgress(percComplete, wr);
+            }
+            else
+            {
+                //update progress bar to inform user that the worker completed correctly the process
+                wr.RemainingTimeInSeconds = 0;
+                (sender as BackgroundWorker).ReportProgress(percComplete, wr);
+            }
 
             s.Shutdown(SocketShutdown.Both);
             s.Close();
@@ -384,26 +396,18 @@ namespace localshare
         private void WorkerJobCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             this.numFinishedJobs++;
-
+           
+            //the worker job has been cancelled for some reason
             if (e.Cancelled)
-            {
-                //the worker job has been cancelled for some reason
                 Console.WriteLine("[DEBUG] A WorkerJob has been cancelled for some reason. error value: " + e.Error);
-            }
             else
-            {
-                //the worker correctly finished his job without errors
-                if (this.numFinishedJobs == numWorkers)
-                {
-                    //all jobs completed, exit the program
-                    Console.WriteLine("[DEBUG] All the jobs have been completed! shutting down the program gracefully.");
-                    Application.Current.Shutdown(0);
-                }
-                else
-                {
-                    Console.WriteLine("[DEBUG] A worker correctly finished his job.");
-                }
+                Console.WriteLine("[DEBUG] A worker correctly finished his job.");
 
+            if (this.numFinishedJobs == numWorkers)
+            {
+                //all jobs completed, exit the program
+                Console.WriteLine("[DEBUG] All the jobs have been completed! shutting down the program gracefully.");
+                Application.Current.Shutdown(0);
             }
         }
 
@@ -418,9 +422,19 @@ namespace localshare
             WorkerResource wr = (WorkerResource)e.UserState;
             User u = wr.Recipient;
 
-            u.updatePercComplete(e.ProgressPercentage);
-            u.updateMsgTimeRemaining(wr.RemainingTimeInSeconds);
-            u.updateMsgTimeStatus(e.ProgressPercentage);
+            //if the worker has been cancelled, notify that the sending has not been completed to the user
+            if (e.ProgressPercentage == -2)
+            {
+                u.UpdatePercComplete(0);
+                u.UpdateMsgTimeRemaining(-2);
+                u.UpdateMsgTimeStatus(-2);
+            }
+            else
+            {
+                u.UpdatePercComplete(e.ProgressPercentage);
+                u.UpdateMsgTimeRemaining(wr.RemainingTimeInSeconds);
+                u.UpdateMsgTimeStatus(e.ProgressPercentage);
+            }  
         }
         
 

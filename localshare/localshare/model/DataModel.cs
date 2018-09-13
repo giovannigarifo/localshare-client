@@ -54,11 +54,11 @@ namespace localshare.model
             this.dbPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\QuickShare";
             this.fsWatcher = new FileSystemWatcher(this.dbPath, "QuickShare.db");
             this.fsWatcher.NotifyFilter = NotifyFilters.LastWrite;
-            this.fsWatcher.Changed += dbFileChanged;
+            this.fsWatcher.Changed += DbFileChanged;
             this.fsWatcher.EnableRaisingEvents = true;
 
             //the first time read the db manually and load the user collection
-            dbRead();
+            DbRead();
 
             //instantiation of the selected users collection
             this.SelectedUsers = new ObservableCollection<User>();
@@ -84,7 +84,7 @@ namespace localshare.model
                     this.resourcePath_isDirectory = false;
                 }
             }
-            catch (Exception exc)
+            catch (Exception)
             {
 
                 Console.WriteLine("[ERROR] unable to read resourcePath file attributes or to shrink resourcePath to filename/dirname");
@@ -96,7 +96,7 @@ namespace localshare.model
         /// <summary>
         /// Read the DB from QuickShare.db and load all information in the collections
         /// </summary>
-        private void dbRead()
+        private void DbRead()
         {
             //load data from db
             try
@@ -170,9 +170,9 @@ namespace localshare.model
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void dbFileChanged(object sender, FileSystemEventArgs e)
+        private void DbFileChanged(object sender, FileSystemEventArgs e)
         {
-            dbRead();
+            DbRead();
         }
 
 

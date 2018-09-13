@@ -43,7 +43,7 @@
 
                             <!-- progress bar -->
                             <Grid Grid.Row="1" Width="400" Height="30" Margin="10,0,0,0" HorizontalAlignment="Left">
-                                <ProgressBar Height="30" BorderThickness="0 2 0 2"
+                                <ProgressBar Height="30" BorderThickness="0 0 0 2"
                                          BorderBrush="{StaticResource colorPrimary}" Background="{StaticResource colorLightGrey}"
                                          Minimum="0" Maximum="100" Value="{Binding PercComplete}" />
                                 <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"

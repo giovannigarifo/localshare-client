@@ -78,7 +78,7 @@ namespace localshare.model
 
 
         //increment perComplete and notify for changed property
-        public void updatePercComplete(int perc)
+        public void UpdatePercComplete(int perc)
         {
             this.PercComplete = perc;
 
@@ -86,23 +86,27 @@ namespace localshare.model
         }
 
         //update the Message to be showed inside the progressbar with the remaining time
-        public void updateMsgTimeRemaining(int remainingTimeInSeconds)
+        public void UpdateMsgTimeRemaining(int remainingTimeInSeconds)
         {
-            if (remainingTimeInSeconds == -1)
+            if (remainingTimeInSeconds == -2)
+                this.MsgTimeRemaining = "Sending cancelled for some reason.";
+            else if (remainingTimeInSeconds == -1)
                 this.MsgTimeRemaining = "Waiting for statistics...";
             else if (remainingTimeInSeconds == 0)
-                this.MsgTimeRemaining = "100";
+                this.MsgTimeRemaining = "Completed!";
             else
-                this.MsgTimeRemaining = "Remaining time in seconds: " + remainingTimeInSeconds;
+                this.MsgTimeRemaining = "Remaining time " + TimeSpan.FromSeconds(remainingTimeInSeconds).ToString(@"hh\:mm\:ss");
 
             this.NotifyPropertyChanged("MsgTimeRemaining");
         }
 
 
         //update the Message to be showed inside the progressbar with the remaining time
-        public void updateMsgTimeStatus(int WorkerProgressPercentage)
+        public void UpdateMsgTimeStatus(int WorkerProgressPercentage)
         {
-            if (WorkerProgressPercentage > 0 && WorkerProgressPercentage < 5)
+            if (WorkerProgressPercentage == -2)
+                this.MsgStatus = "Sending cancelled.";
+            else if (WorkerProgressPercentage > 0 && WorkerProgressPercentage < 5)
                 this.MsgStatus = "Sending started...";
             else if (WorkerProgressPercentage == 50)
                 this.MsgStatus = "Half file sended...";

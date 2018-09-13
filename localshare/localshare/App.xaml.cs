@@ -27,7 +27,6 @@ namespace localshare
         /// <param name="e">arguments of the event</param>
         private void ApplicationStartupHandler(object sender, StartupEventArgs e)
         {
-
             //create model
             dataModel = new DataModel();
 
@@ -51,14 +50,12 @@ namespace localshare
             try
             {
                 FileInfo fi = new FileInfo(e.Args[0]);
-
             }
-            catch (Exception exc)
+            catch (Exception)
             {
                 Console.WriteLine("[ERROR] incorrect file path.");
                 Shutdown();
             }
-            
 
             //show the main window
             appWindow.Show();
@@ -76,7 +73,6 @@ namespace localshare
         /// <param name="e">arguments of the event</param>
         private void Application_Exit(object sender, ExitEventArgs e)
         {
-
             if (e.ApplicationExitCode == 1) //failure
             {
                 Console.WriteLine("[DEBUG] app exiting with status=1 (failure).");
@@ -88,7 +84,6 @@ namespace localshare
 
             if (File.Exists(dataModel.compressedPath))
                 File.Delete(dataModel.compressedPath);
-
         }
     }
 }

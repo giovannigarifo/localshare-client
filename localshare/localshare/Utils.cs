@@ -17,6 +17,9 @@ namespace localshare
             {
                 receivedNow = socket.Receive(buffer, receivedBytes, n - receivedBytes, 0);
                 receivedBytes += receivedNow;
+
+                if (receivedNow == 0)
+                    return null;
             }
 
             return buffer;

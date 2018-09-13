@@ -9,22 +9,19 @@ namespace localshare.model
     /// </summary>
     class WorkerResource
     {
-        private string compressedPath;
         public string CompressedPath { get; set; }
 
-        private string resourceName; //filename or directory name of the resource that the user want to send (not the compressed tmp file!)
+        //filename or directory name of the resource that the user want to send (not the compressed tmp file!)
         public string ResourceName { get; set; }
 
-        private User recipient;
         public User Recipient { get; set; }
 
-        private FileInfo compressedFileInfo;
         public FileInfo CompressedFileInfo { get; set; }
 
-        private int workerID; //the position in the Workers array
+        //the position in the Workers array
         public int WorkerID { get; set; }
 
-        private int remainingTimeInSeconds; //where the worker stores the calculated remaining time after each chunk sended
+        //where the worker stores the calculated remaining time after each chunk sended
         public int RemainingTimeInSeconds { get; set; }
 
         /*****************

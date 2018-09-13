@@ -1,6 +1,7 @@
 # my personal gitignore
 *.mp4
 *.pdf
+*.iso
 
 # github's gitignore for vistual studio
 
