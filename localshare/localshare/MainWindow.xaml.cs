@@ -19,6 +19,7 @@ namespace localshare
         UserList uList;
         UserProgress uProgress;
         CompressionProgress cProgress;
+        Boolean isJobDone = false;
 
         //file sending workers
         BackgroundWorker[] SendingWorkers = null; //workers array
@@ -178,8 +179,9 @@ namespace localshare
          */
         private void CancelBtnClicked(object sender, RoutedEventArgs e)
         {
-            //if nothing has been made so far
-            if (this.SendingWorkers == null && this.CompressWorker == null)
+            //if nothing has been made so far OR nothing more to be done
+            if (this.SendingWorkers == null && this.CompressWorker == null
+                || isJobDone)
                 Application.Current.Shutdown(0);
             
             //if cancel requested while compressing the file
@@ -292,8 +294,6 @@ namespace localshare
 
             try
             {
-                //TODO: INVIARE NOME UTENTE LOCALE PRESO DA CLASSE DEDICATA
-
                 // 1) send header
                 int un_len = dm.onlineUsers.MyUserName.Length * 2; //coded in Unicode (UTF-16)
                 int rn_len = wr.ResourceName.Length * 2;
@@ -437,11 +437,11 @@ namespace localshare
             else
                 Console.WriteLine("[DEBUG] A worker correctly finished his job.");
 
-            //close application if all workers returned, indipendemtly from their status
+            //close application if all workers returned, indipendently from their status
             if (this.numFinishedJobs == numWorkers)
             {
                 Console.WriteLine("[DEBUG] All the jobs have been completed! shutting down the program gracefully.");
-                Application.Current.Shutdown(0);
+                this.isJobDone = true;
             }
         }
 

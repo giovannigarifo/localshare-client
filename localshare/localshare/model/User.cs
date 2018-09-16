@@ -89,7 +89,7 @@ namespace localshare.model
         public void UpdateMsgTimeRemaining(int remainingTimeInSeconds)
         {
             if (remainingTimeInSeconds == -2)
-                this.MsgTimeRemaining = "Sending cancelled for some reason.";
+                this.MsgTimeRemaining = "Cancelled";
             else if (remainingTimeInSeconds == -1)
                 this.MsgTimeRemaining = "Waiting for statistics...";
             else if (remainingTimeInSeconds == 0)
@@ -101,11 +101,11 @@ namespace localshare.model
         }
 
 
-        //update the Message to be showed inside the progressbar with the remaining time
+        //update the Message to be showed below the progressbar with the remaining time
         public void UpdateMsgTimeStatus(int WorkerProgressPercentage)
         {
             if (WorkerProgressPercentage == -2)
-                this.MsgStatus = "Sending cancelled.";
+                this.MsgStatus = "Sending has been interrupted by you or due to a network error.";
             else if (WorkerProgressPercentage > 0 && WorkerProgressPercentage < 5)
                 this.MsgStatus = "Sending started...";
             else if (WorkerProgressPercentage == 50)

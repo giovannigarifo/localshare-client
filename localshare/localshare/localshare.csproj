@@ -74,8 +74,15 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="controls\CompressionProgress.xaml.cs">
+      <DependentUpon>CompressionProgress.xaml</DependentUpon>
+    </Compile>
     <Compile Include="model\OnlineUsers.cs" />
     <Compile Include="Utils.cs" />
+    <Page Include="controls\CompressionProgress.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="controls\UserList.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
