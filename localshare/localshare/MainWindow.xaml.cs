@@ -141,17 +141,13 @@ namespace localshare
 
 
         /*
-         * action to take when the "Cancel" button has been clicked (event fired): Controlled shutdown of the program
+         * Action to take when the "Cancel" button has been clicked (event fired): set worker status to cancelled.
+         * each worker will complete his job with cancel status and the application will shutdown
          */
         private void CancelBtnClicked(object sender, RoutedEventArgs e)
         {
             for (int i = 0; i < this.numWorkers; i++)
-            {
-                this.Workers[i].CancelAsync(); //set the CancellationPending property of each worker to true
-            }
-
-            //TODO: forse meglio aspettare l'uscita dei background worker prima di fare la shutdown
-            Application.Current.Shutdown(0);
+                this.Workers[i].CancelAsync(); 
         }
 
         /*
@@ -258,7 +254,7 @@ namespace localshare
 
             try
             {
-                //TODO: INVIARE NOME UTENTE LOCALE
+                //TODO: INVIARE NOME UTENTE LOCALE PRESO DA CLASSE DEDICATA
 
                 // 1) send header
                 int un_len = dm.onlineUsers.MyUserName.Length * 2; //coded in Unicode (UTF-16)
@@ -304,7 +300,6 @@ namespace localshare
                     byte[] userPhotoLen = BitConverter.GetBytes(Convert.ToInt32(0)); //UserPhotoLength[4 bytes]
                     Utils.SendExactly(s, userPhotoLen);
                 }
-
 
                 // waiting for response from server
                 recvBuf = Utils.ReceiveExactly(s, 5);
@@ -399,13 +394,13 @@ namespace localshare
            
             //the worker job has been cancelled for some reason
             if (e.Cancelled)
-                Console.WriteLine("[DEBUG] A WorkerJob has been cancelled for some reason. error value: " + e.Error);
+                Console.WriteLine("[DEBUG] A WorkerJob has been cancelled by the close button or for some other reason. error value: " + e.Error);
             else
                 Console.WriteLine("[DEBUG] A worker correctly finished his job.");
 
+            //close application if all workers returned, indipendemtly from their status
             if (this.numFinishedJobs == numWorkers)
             {
-                //all jobs completed, exit the program
                 Console.WriteLine("[DEBUG] All the jobs have been completed! shutting down the program gracefully.");
                 Application.Current.Shutdown(0);
             }

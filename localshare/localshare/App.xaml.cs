@@ -82,8 +82,20 @@ namespace localshare
                 Console.WriteLine("[ERROR] app exiting with status=0 (success).");
             }
 
-            if (File.Exists(dataModel.compressedPath))
-                File.Delete(dataModel.compressedPath);
+            try
+            {
+                //delete the compressed file
+                if (File.Exists(dataModel.compressedPath))
+                    File.Delete(dataModel.compressedPath);
+
+            } catch (Exception)
+            {
+                MessageBox.Show("There was a problem while closing the App. It's possible that some temporary file " +
+                                "have not been deleted correctly, please check if there are files that begins with \"localshare\"" +
+                                "in your tmp folder, or simply delete all your temporary files with the windows disk cleanup utility."
+                                , "Alert", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            
         }
     }
 }
