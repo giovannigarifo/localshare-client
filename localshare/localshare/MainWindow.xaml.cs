@@ -18,10 +18,15 @@ namespace localshare
         DataModel dm;
         UserList uList;
         UserProgress uProgress;
+        CompressionProgress cProgress;
 
-        BackgroundWorker[] Workers; //workers array
+        //file sending workers
+        BackgroundWorker[] SendingWorkers = null; //workers array
         int numWorkers = 0; //number of workers
         int numFinishedJobs = 0; //number of finished jobs, e.g. the number of workers that correctly returned
+
+        //compress worker
+        BackgroundWorker CompressWorker = null; //worker in charge of the file compression
 
         /// <summary>
         /// MainWindow constructor
@@ -42,76 +47,102 @@ namespace localshare
 
 
 
-        /**************************************
-         * Event handlers for the two buttons
-         */
-
         /*
          * action to take when the "Share" button has been clicked (event fired)
          */
         private void ShareBtnClicked(object sender, RoutedEventArgs e)
         {
-            int i = 0;
-            WorkerResource wr = null;
-
             // check if user didn't selected anything
             if (uList.UsersListView.SelectedItems.Count == 0)
                 return;
 
-            // 1) obtain a single archive for the resources to be sent
+            //launch a worker to compress the file
+            this.CompressWorker = new BackgroundWorker();
+            this.CompressWorker.WorkerReportsProgress = false;
+            this.CompressWorker.WorkerSupportsCancellation = true;
+            this.CompressWorker.DoWork += CompressResource; 
+            this.CompressWorker.RunWorkerCompleted += CompressionCompleted; //fired when the worker has finished is job or it has been cancelled
+            this.CompressWorker.RunWorkerAsync(this.dm);
+
+            //show to the user a message while the compression is made and hide useless buttons
+            this.cProgress = new CompressionProgress();
+            this.contentControl.Content = this.cProgress;
+            this.SelectAllBtn.Visibility = Visibility.Collapsed;
+        }
+
+
+
+        /*
+         * Compress the resource obtaining the tmp file to be sent
+         */
+        public void CompressResource(object sender, DoWorkEventArgs e)
+        {
+            DataModel dm = (DataModel)e.Argument;
+            
+            //obtain a single archive for the resources to be sent
             try
             {
                 dm.compressedPath = Path.GetTempPath() + "localshare_tmp_" + Stopwatch.GetTimestamp().ToString() + ".zip";
 
                 if (dm.resourcePath_isDirectory)
-                {
                     ZipFile.CreateFromDirectory(dm.resourcePath, dm.compressedPath, CompressionLevel.NoCompression, true);
-                }
                 else
                 {
                     using (FileStream zipToCreate = new FileStream(dm.compressedPath, FileMode.Create))
-                    {
                         using (ZipArchive archive = new ZipArchive(zipToCreate, ZipArchiveMode.Create))
-                        {
                             archive.CreateEntryFromFile(dm.resourcePath, dm.resourceName, CompressionLevel.NoCompression);
-                        }
-                    }
                 }
             }
             catch (Exception exc)
             {
                 if (exc is System.Security.SecurityException)
-                {
                     Console.WriteLine("[ERROR] unable to retrieve the tmp folder path");
-                    Application.Current.Shutdown(1);
-                }
                 else if (exc is IOException)
-                {
-                    //a file in the directory cannot be added to the archive, the archive is left incomplete and invalid.
-                    Console.WriteLine("[ERROR] unable to compress the directory");
-                    Application.Current.Shutdown(1);
-                }
+                    Console.WriteLine("[ERROR] unable to compress the directory"); //a file in the directory cannot be added to the archive, the archive is left incomplete and invalid.
                 else
-                {
                     Console.WriteLine("[ERROR] unable to perform the creation of the compressed version of the file to be sent");
-                    Application.Current.Shutdown(1);
-                }
+                
+                e.Cancel = true;
             }
+        }
 
-            // 2) for each selected user, fire a worker that send the resources to him and add him to the SelectedUsers collection
+
+
+        /*
+         * Callback fired when the CompressWorker will finish his job
+         */
+        private void CompressionCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Cancelled)
+                Application.Current.Shutdown(1);
+
+            //start the sending workers
+            SendResource();
+        }
+
+
+
+        /*
+         * Start the workers that will send the resource.
+         * for each selected user, fire a worker that send the resources to him and add him to the SelectedUsers collection
+         */
+        private void SendResource()
+        {
+            int i = 0;
+            WorkerResource wr = null;
+
             this.numWorkers = uList.UsersListView.SelectedItems.Count;
-            this.Workers = new BackgroundWorker[numWorkers];
-            i = 0;
+            this.SendingWorkers = new BackgroundWorker[numWorkers];
 
             foreach (User u in uList.UsersListView.SelectedItems)
             {
-                this.Workers[i] = new BackgroundWorker();
+                this.SendingWorkers[i] = new BackgroundWorker();
 
-                this.Workers[i].WorkerReportsProgress = true;
-                this.Workers[i].WorkerSupportsCancellation = true;
-                this.Workers[i].DoWork += WorkerJob; //registring WorkerJob as the last event handler for the RunWorkerAsync event
-                this.Workers[i].ProgressChanged += WorkerJobProgressChanged; //event handler for the progresschanged event
-                this.Workers[i].RunWorkerCompleted += WorkerJobCompleted; //fired when the worker has finished is job or it has been cancelled
+                this.SendingWorkers[i].WorkerReportsProgress = true;
+                this.SendingWorkers[i].WorkerSupportsCancellation = true;
+                this.SendingWorkers[i].DoWork += WorkerJob; //registring WorkerJob as the last event handler for the RunWorkerAsync event
+                this.SendingWorkers[i].ProgressChanged += WorkerJobProgressChanged; //event handler for the progresschanged event
+                this.SendingWorkers[i].RunWorkerCompleted += WorkerJobCompleted; //fired when the worker has finished is job or it has been cancelled
 
                 //aggregate all the needed resources for the worker
                 try
@@ -124,7 +155,7 @@ namespace localshare
                     Application.Current.Shutdown(1);
                 }
 
-                this.Workers[i].RunWorkerAsync(wr); //fires the event with the WorkerResource as argument
+                this.SendingWorkers[i].RunWorkerAsync(wr); //fires the event with the WorkerResource as argument
 
                 //add the user to the SelectedUsers collection
                 this.dm.AddSelectedUser(u);
@@ -140,15 +171,30 @@ namespace localshare
         }
 
 
+
         /*
          * Action to take when the "Cancel" button has been clicked (event fired): set worker status to cancelled.
          * each worker will complete his job with cancel status and the application will shutdown
          */
         private void CancelBtnClicked(object sender, RoutedEventArgs e)
         {
-            for (int i = 0; i < this.numWorkers; i++)
-                this.Workers[i].CancelAsync(); 
+            //if nothing has been made so far
+            if (this.SendingWorkers == null && this.CompressWorker == null)
+                Application.Current.Shutdown(0);
+            
+            //if cancel requested while compressing the file
+            else if (this.SendingWorkers == null && this.CompressWorker!= null)
+                this.CompressWorker.CancelAsync();
+            
+            //if cancel requested while sending
+            else if (this.SendingWorkers != null)
+            {
+                for (int i = 0; i < this.numWorkers; i++)
+                    this.SendingWorkers[i].CancelAsync();
+            }
         }
+
+
 
         /*
          * action to take when the "SELECT ALL" button has been clicked (event fired): select all the users in the collection
@@ -165,20 +211,12 @@ namespace localshare
                 this.uList.UsersListView.SelectAll();
                 this.SelectAllBtn.Content = "DESELECT ALL";
             }
-                
         }
 
 
 
-        private void ObtainResourceToBeSent()
-        {
-
-        }
-
-
-
-        /*************************************
-         *  Event handlers for the Workers
+        /******************************************
+         *  Event handlers for the SendingWorkers
          */
 
         /// <summary>
@@ -315,7 +353,7 @@ namespace localshare
                     sw.Start();
                     int n_kBps = 0;
 
-                    while (numSent != fileSize && this.Workers[WorkerID].CancellationPending != true)
+                    while (numSent != fileSize && this.SendingWorkers[WorkerID].CancellationPending != true)
                     {
                         numRead = fs.Read(datachunk, 0, datachunkLen); //read a chunk from file
 
@@ -364,7 +402,7 @@ namespace localshare
             }
 
             //test for pending cancellation request and Release the socket and all the resources.
-            if (this.Workers[WorkerID].CancellationPending == true)
+            if (this.SendingWorkers[WorkerID].CancellationPending == true)
             {
                 //update progress bar to inform user that the worker cancelled is execution
                 e.Cancel = true;
@@ -381,6 +419,7 @@ namespace localshare
             s.Shutdown(SocketShutdown.Both);
             s.Close();
         }
+
 
 
         /// <summary>
@@ -405,6 +444,7 @@ namespace localshare
                 Application.Current.Shutdown(0);
             }
         }
+
 
 
         /// <summary>

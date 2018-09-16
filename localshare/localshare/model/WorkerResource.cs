@@ -18,7 +18,7 @@ namespace localshare.model
 
         public FileInfo CompressedFileInfo { get; set; }
 
-        //the position in the Workers array
+        //the position in the SendingWorkers array
         public int WorkerID { get; set; }
 
         //where the worker stores the calculated remaining time after each chunk sended
