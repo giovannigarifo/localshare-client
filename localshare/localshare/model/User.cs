@@ -92,8 +92,6 @@ namespace localshare.model
                 this.MsgTimeRemaining = "Cancelled";
             else if (remainingTimeInSeconds == -1)
                 this.MsgTimeRemaining = "Waiting for statistics...";
-            else if (remainingTimeInSeconds == 0)
-                this.MsgTimeRemaining = "Completed!";
             else
                 this.MsgTimeRemaining = "Remaining time " + TimeSpan.FromSeconds(remainingTimeInSeconds).ToString(@"hh\:mm\:ss");
 
@@ -109,11 +107,18 @@ namespace localshare.model
             else if (WorkerProgressPercentage > 0 && WorkerProgressPercentage < 5)
                 this.MsgStatus = "Sending started...";
             else if (WorkerProgressPercentage == 50)
-                this.MsgStatus = "Half file sended...";
+                this.MsgStatus = "Half file sent...";
             else if (WorkerProgressPercentage > 90 && WorkerProgressPercentage < 100)
                 this.MsgStatus = "Hold on...last bytes left!";
             else if (WorkerProgressPercentage == 100)
-                this.MsgStatus = "File correctly sended.";
+            {
+                this.MsgStatus = "File correctly sent.";
+
+                //also update MsgStatus
+                this.MsgTimeRemaining = "Completed!";
+                this.NotifyPropertyChanged("MsgTimeRemaining");
+            }
+
 
             this.NotifyPropertyChanged("MsgStatus");
         }

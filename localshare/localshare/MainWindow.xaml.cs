@@ -28,6 +28,7 @@ namespace localshare
 
         //compress worker
         BackgroundWorker CompressWorker = null; //worker in charge of the file compression
+        Boolean cancelRequestedByUser = false; //necessary for cancel operation while performing compression because CancelAsync() doesn't work
 
         /// <summary>
         /// MainWindow constructor
@@ -57,6 +58,11 @@ namespace localshare
             if (uList.UsersListView.SelectedItems.Count == 0)
                 return;
 
+            // populate the Selected User collection
+            this.dm.SelectedUsersCount = uList.UsersListView.SelectedItems.Count;
+            foreach (User u in uList.UsersListView.SelectedItems)
+                this.dm.AddSelectedUser(u);
+
             //launch a worker to compress the file
             this.CompressWorker = new BackgroundWorker();
             this.CompressWorker.WorkerReportsProgress = false;
@@ -69,6 +75,10 @@ namespace localshare
             this.cProgress = new CompressionProgress();
             this.contentControl.Content = this.cProgress;
             this.SelectAllBtn.Visibility = Visibility.Collapsed;
+            this.ShareBtn.Visibility = Visibility.Collapsed;
+
+            //change close button text
+            this.CancelBtn.Content = "CANCEL";
         }
 
 
@@ -116,9 +126,10 @@ namespace localshare
         {
             if (e.Cancelled)
                 Application.Current.Shutdown(1);
+            else if(cancelRequestedByUser)
+                Application.Current.Shutdown(0);
 
-            //start the sending workers
-            SendResource();
+            else SendResource(); //start the sending workers
         }
 
 
@@ -132,10 +143,10 @@ namespace localshare
             int i = 0;
             WorkerResource wr = null;
 
-            this.numWorkers = uList.UsersListView.SelectedItems.Count;
+            this.numWorkers = this.dm.SelectedUsersCount;
             this.SendingWorkers = new BackgroundWorker[numWorkers];
 
-            foreach (User u in uList.UsersListView.SelectedItems)
+            foreach (User u in this.dm.SelectedUsers)
             {
                 this.SendingWorkers[i] = new BackgroundWorker();
 
@@ -157,9 +168,6 @@ namespace localshare
                 }
 
                 this.SendingWorkers[i].RunWorkerAsync(wr); //fires the event with the WorkerResource as argument
-
-                //add the user to the SelectedUsers collection
-                this.dm.AddSelectedUser(u);
 
                 i++;
             }
@@ -183,16 +191,22 @@ namespace localshare
             if (this.SendingWorkers == null && this.CompressWorker == null
                 || isJobDone)
                 Application.Current.Shutdown(0);
-            
+
             //if cancel requested while compressing the file
-            else if (this.SendingWorkers == null && this.CompressWorker!= null)
-                this.CompressWorker.CancelAsync();
-            
+            else if (this.SendingWorkers == null && this.CompressWorker != null)
+            {
+                this.cancelRequestedByUser = true;
+                this.cProgress.CompressionMessage.Text = "Cancellation requested...";
+                this.CancelBtn.Visibility = Visibility.Collapsed;
+            }
+                
             //if cancel requested while sending
             else if (this.SendingWorkers != null)
             {
                 for (int i = 0; i < this.numWorkers; i++)
                     this.SendingWorkers[i].CancelAsync();
+
+                this.CancelBtn.Content = "CLOSE";
             }
         }
 
@@ -234,7 +248,7 @@ namespace localshare
         /// FileName[length]
         /// DataLength[8->Int64]
         /// 
-        /// after the header, the whole file is sended.
+        /// after the header, the whole file is sent.
         /// 
         /// </summary>
         /// <param name="sender">the object that sent the event</param>
@@ -259,14 +273,14 @@ namespace localshare
             long numSent = 0; //number of bytes that have been actually sent
 
             //data buffer
-            const int datachunkLen = 1500; //number of bytes to read from file stream (maximum MTU for ethernet frame)
+            const int datachunkLen = 262144; //number of bytes to read from file stream
             byte[] datachunk = new byte[datachunkLen]; //buffer that contains each chunk of the value [V]
             byte[] recvBuf = new byte[5]; //OK---, NOMEM
 
             //remote connection
             Socket s = null;
             IPAddress ipAddr = IPAddress.Parse(recipient.Address);
-            Int32 tcpPort = 30200;
+            Int32 tcpPort = this.dm.onlineUsers.AppPort;
             IPEndPoint ipEndPoint = new IPEndPoint(ipAddr, tcpPort);
 
             //create socket and connect to the remote host
@@ -289,6 +303,9 @@ namespace localshare
 
                 Console.WriteLine("[ERROR] unable to connect to the remote endpoint.");
                 e.Cancel = true;
+                wr.RemainingTimeInSeconds = -2; //notify error in sending
+                (sender as BackgroundWorker).ReportProgress(-2, wr);
+
                 return;
             }
 
@@ -393,7 +410,7 @@ namespace localshare
                 if (SendExc is ArgumentNullException || SendExc is ArgumentOutOfRangeException)
                     Console.WriteLine("[ERROR] BackgroundWorker" + wr.WorkerID + " catched ArgumentNullException or ArgumentOutOfRangeException.");
                 else if(SendExc is SocketException)
-                    Console.WriteLine("[WARNING] Send timeout (5 seconds elapsed from send request) in BackgroundWorker" + wr.WorkerID);
+                    Console.WriteLine("[WARNING] Send/Recv timeout (5 seconds elapsed from send request) in BackgroundWorker" + wr.WorkerID);
                 else
                     Console.WriteLine("[ERROR] BackgroundWorker" + wr.WorkerID + " catched generic Exception during socket send process.");
                 
@@ -401,13 +418,15 @@ namespace localshare
                 e.Cancel = true;
             }
 
-            //test for pending cancellation request and Release the socket and all the resources.
-            if (this.SendingWorkers[WorkerID].CancellationPending == true)
+            //test for pending cancellation request (or force cancellation because of exception) and Release 
+            //the socket and all the resources.
+            if (this.SendingWorkers[WorkerID].CancellationPending == true 
+                || e.Cancel == true)
             {
                 //update progress bar to inform user that the worker cancelled is execution
                 e.Cancel = true;
                 wr.RemainingTimeInSeconds = -2; //notify error in sending
-                (sender as BackgroundWorker).ReportProgress(percComplete, wr);
+                (sender as BackgroundWorker).ReportProgress(-2, wr);
             }
             else
             {
@@ -442,6 +461,7 @@ namespace localshare
             {
                 Console.WriteLine("[DEBUG] All the jobs have been completed! shutting down the program gracefully.");
                 this.isJobDone = true;
+                this.CancelBtn.Content = "CLOSE";
             }
         }
 
@@ -451,7 +471,7 @@ namespace localshare
         /// this event handler is used to update the progress bar and the expected time remaining in the view every time a progresschanged event is fired
         /// </summary>
         /// <param name="sender">the sender is the related worker</param>
-        /// <param name="e">the progress percentage sended by the worker</param>
+        /// <param name="e">the progress percentage sent by the worker</param>
         private void WorkerJobProgressChanged(object sender, ProgressChangedEventArgs e)
         {
             WorkerResource wr = (WorkerResource)e.UserState;
@@ -461,8 +481,8 @@ namespace localshare
             if (e.ProgressPercentage == -2)
             {
                 u.UpdatePercComplete(0);
-                u.UpdateMsgTimeRemaining(-2);
                 u.UpdateMsgTimeStatus(-2);
+                u.UpdateMsgTimeRemaining(-2);
             }
             else
             {

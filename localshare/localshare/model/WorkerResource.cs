@@ -21,7 +21,7 @@ namespace localshare.model
         //the position in the SendingWorkers array
         public int WorkerID { get; set; }
 
-        //where the worker stores the calculated remaining time after each chunk sended
+        //where the worker stores the calculated remaining time after each chunk sent
         public int RemainingTimeInSeconds { get; set; }
 
         /*****************

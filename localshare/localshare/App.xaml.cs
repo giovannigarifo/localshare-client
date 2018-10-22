@@ -79,7 +79,7 @@ namespace localshare
             }
             else //success
             {
-                Console.WriteLine("[ERROR] app exiting with status=0 (success).");
+                Console.WriteLine("[DEBUG] app exiting with status=0 (success).");
             }
 
             try

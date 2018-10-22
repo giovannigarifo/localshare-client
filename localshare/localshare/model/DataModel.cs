@@ -34,11 +34,12 @@ namespace localshare.model
 
         public ObservableCollection<User> AvailableUsers { get; set; } //collection of available user on the LAN
         public ObservableCollection<User> SelectedUsers { get; set; } //collection of the selected users (selected by the user)
+        public int SelectedUsersCount { get; set; }
 
         public string resourcePath; //path of the file or directory to be shared with the selected users
         public Boolean resourcePath_isDirectory; //flag for testing if resource is a directory or not
         public string resourceName; //filename or directory name of the resource to be sent, shrinked from resourcePath
-        public string compressedPath; //path of the compressed temporary file that is actually sended via the socket
+        public string compressedPath; //path of the compressed temporary file that is actually sent via the socket
 
         /****************
          *  Events 
@@ -62,6 +63,7 @@ namespace localshare.model
 
             //instantiation of the selected users collection
             this.SelectedUsers = new ObservableCollection<User>();
+            this.SelectedUsersCount = 0;
 
             //retrieving path from arguments
             string[] args = Environment.GetCommandLineArgs();
@@ -158,6 +160,7 @@ namespace localshare.model
             catch (IOException)
             {
                 //the file is unavailable
+                Console.WriteLine("[DEBUG] file is currently used by the server, cannot open it. Retry in 1 second.");
                 return fs = null;
             }
 

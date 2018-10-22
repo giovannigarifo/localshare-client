@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 
 namespace localshare.model
 {
+
+    /*
+    *   Object that represents the deserialized JSON db
+    */
     public class OnlineUsers : INotifyPropertyChanged
     {
         public String MyUserName { get; set; }

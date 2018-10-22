@@ -5,10 +5,10 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:localshare"
              mc:Ignorable="d" 
-            d:DesignHeight="450" d:DesignWidth="650">
+             d:DesignHeight="450" d:DesignWidth="650">
 
 
-    <TextBlock VerticalAlignment="Center" TextAlignment="Center" TextTrimming="CharacterEllipsis"
+    <TextBlock x:Name="CompressionMessage" VerticalAlignment="Center" TextAlignment="Center" TextTrimming="CharacterEllipsis"
      FontSize="16" FontFamily="Segoe UI" FontStretch="Condensed" FontWeight="SemiBold">
         Please wait while we compress the file to be sent
     </TextBlock>
